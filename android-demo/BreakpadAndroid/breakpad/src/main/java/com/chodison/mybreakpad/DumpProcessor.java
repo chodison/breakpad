@@ -21,6 +21,14 @@ public class DumpProcessor {
         }
     }
 
+    /**
+     *
+     *
+     * @param commands
+     *
+     * param1:dump file
+     * param2:processed file
+     */
     public static boolean exec(String[] commands) {
         if (commands.length < 2) {
             Log.e(TAG, "commands is error!");

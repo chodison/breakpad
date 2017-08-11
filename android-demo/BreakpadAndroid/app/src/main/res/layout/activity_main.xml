@@ -7,9 +7,16 @@
     tools:context="com.zane.breakpadandroid.MainActivity">
 
     <Button
+        android:id="@+id/bt_crash"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/crash"
+        android:onClick="doClick"/>
+    <Button
+        android:id="@+id/bt_processor"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/process"
         android:onClick="doClick"/>
 
 </LinearLayout>

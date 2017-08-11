@@ -49,7 +49,7 @@
 #include "processor/simple_symbol_supplier.h"
 #include "processor/stackwalk_common.h"
 #include "minidump_stackwalk.h"
-
+#include "base/mylog.h"
 
 namespace {
 
@@ -92,12 +92,14 @@ bool PrintMinidumpProcess(const string &minidump_file,
   Minidump dump(minidump_file);
   if (!dump.Read()) {
      BPLOG(ERROR) << "Minidump " << dump.path() << " could not be read";
+     LOGE("PrintMinidumpProcess Minidump could not be read");
      return false;
   }
   ProcessState process_state;
   if (minidump_processor.Process(&dump, &process_state) !=
       google_breakpad::PROCESS_OK) {
     BPLOG(ERROR) << "MinidumpProcessor::Process failed";
+    LOGE("PrintMinidumpProcess Process failed");
     return false;
   }
 
@@ -124,6 +126,7 @@ int main_jni(int argc, char **argv) {
 
   if (argc < 2) {
     usage(argv[0]);
+    LOGE("main_jni 127 argc < 2 failed");
     return 1;
   }
 
@@ -135,6 +138,7 @@ int main_jni(int argc, char **argv) {
   if (strcmp(argv[1], "-m") == 0) {
     if (argc < 3) {
       usage(argv[0]);
+      LOGE("main_jni 139 -m argc < 3 failed");
       return 1;
     }
 
@@ -144,6 +148,7 @@ int main_jni(int argc, char **argv) {
   } else if (strcmp(argv[1], "-s") == 0) {
     if (argc < 3) {
       usage(argv[0]);
+      LOGE("main_jni 149 -s argc < 3 failed");
       return 1;
     }
 
@@ -162,8 +167,10 @@ int main_jni(int argc, char **argv) {
       symbol_paths.push_back(argv[argi]);
   }
 
-  return PrintMinidumpProcess(minidump_file,
+  int ret = PrintMinidumpProcess(minidump_file,
                               symbol_paths,
                               machine_readable,
                               output_stack_contents) ? 0 : 1;
+   LOGE("main_jni 172 failed,ret:%d",ret);
+   return ret;
 }

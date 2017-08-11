@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">BreakpadAndroid</string>
+    <string name="crash">crash</string>
 </resources>

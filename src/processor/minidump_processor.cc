@@ -1041,7 +1041,7 @@ string MinidumpProcessor::GetCrashReason(Minidump *dump, uint64_t *address) {
       }
       break;
     }
-
+#ifdef _WIN32
     case MD_OS_WIN32_NT:
     case MD_OS_WIN32_WINDOWS: {
       switch (exception_code) {
@@ -1214,7 +1214,7 @@ string MinidumpProcessor::GetCrashReason(Minidump *dump, uint64_t *address) {
       }
       break;
     }
-
+#endif
     case MD_OS_ANDROID:
     case MD_OS_LINUX: {
       switch (exception_code) {

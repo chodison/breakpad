@@ -70,7 +70,7 @@ LOCAL_ARM_MODE := arm
 
 # List of client source files, directly taken from Makefile.am
 LOCAL_SRC_FILES := \
-    breakpad_jni.cc \
+    breakpad_client_jni.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/crash_generation/crash_generation_client.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/dump_writer_common/thread_info.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/dump_writer_common/ucontext_reader.cc \

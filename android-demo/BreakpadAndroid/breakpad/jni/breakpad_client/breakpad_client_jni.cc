@@ -1,4 +1,4 @@
-#include "breakpad_jni.h"
+#include "breakpad_client_jni.h"
 #include "src/client/linux/handler/exception_handler.h"
 #include "src/client/linux/handler/minidump_descriptor.h"
 #include "base/mylog.h"

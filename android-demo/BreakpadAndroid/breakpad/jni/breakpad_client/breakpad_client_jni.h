@@ -1,5 +1,5 @@
-#ifndef BREAKPAD_JNI_H
-#define BREAKPAD_JNI_H
+#ifndef __BREAKPAD_CLIENT_JNI_H__
+#define __BREAKPAD_CLIENT_JNI_H__
 
 #include <jni.h>
 
@@ -15,4 +15,4 @@ JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_ExceptionHandler_nativeTestC
 };
 #endif
 
-#endif // BREAKPAD_JNI_H
+#endif // __BREAKPAD_CLIENT_JNI_H__

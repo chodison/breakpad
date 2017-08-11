@@ -66,6 +66,10 @@ static const int DT_ANDROID_REL = DT_LOOS + 2;
 static const int DT_ANDROID_RELA = DT_LOOS + 4;
 #endif
 
+#ifndef UINTPTR_MAX
+#define UINTPTR_MAX UINT_MAX
+#endif
+
 #endif  // __ANDROID __
 
 static const char kMappedFileUnsafePrefix[] = "/dev/";

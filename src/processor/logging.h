@@ -62,6 +62,9 @@
 
 #include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
+#ifdef __ANDROID__
+#include "base/mylog.h"
+#endif
 
 #ifdef BP_LOGGING_INCLUDE
 #include BP_LOGGING_INCLUDE

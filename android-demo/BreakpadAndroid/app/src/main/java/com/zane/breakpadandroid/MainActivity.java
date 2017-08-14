@@ -59,7 +59,7 @@ public class MainActivity extends AppCompatActivity {
                 for (File file : files){
                     String dumpPath = file.getAbsolutePath();
                     String crashFileName = DUMP_DIR + "/crash.txt";
-                    boolean exec = DumpProcessor.exec(new String[]{dumpPath, crashFileName});
+                    boolean exec = DumpProcessor.exec(new String[]{crashFileName, dumpPath});
                     e.onNext(exec);
                 }
             }

@@ -45,6 +45,36 @@
 #include "processor/logging.h"
 #include "processor/pathname_stripper.h"
 
+static void (*breakpad_log_callback)(void*, int, const char*, va_list) = NULL;
+
+static void breakpad_vlog(void* model, int level, const char *fmt, va_list vl)
+{
+    void (*log_callback)(void*, int, const char*, va_list) = breakpad_log_callback;
+    if (log_callback)
+        log_callback(model, level, fmt, vl);
+}
+
+void breakpad_log(void* model, int level, const char *fmt, ...)
+{
+    va_list vl;
+    va_start(vl, fmt);
+    breakpad_vlog(model, level, fmt, vl);
+    va_end(vl);
+}
+
+void breakpad_log2(const char *fmt, ...)
+{
+    va_list vl;
+    va_start(vl, fmt);
+    breakpad_vlog((void*)"", 0, fmt, vl);
+    va_end(vl);
+}
+
+void breakpad_log_set_callback(void (*callback)(void*, int, const char*, va_list))
+{
+	breakpad_log_callback = callback;
+}
+
 namespace google_breakpad {
 
 LogStream::LogStream(std::ostream &stream, Severity severity,

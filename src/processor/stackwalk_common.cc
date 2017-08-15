@@ -51,11 +51,6 @@
 #include "google_breakpad/processor/stack_frame_cpu.h"
 #include "processor/logging.h"
 #include "processor/pathname_stripper.h"
-#ifdef __ANDROID__
-#define MYPRINTF(...)    ((void)__android_log_print(ANDROID_LOG_INFO, "chodison", __VA_ARGS__))
-#else
-#define MYPRINTF(...)    ((void)printf(__VA_ARGS__))
-#endif
 
 namespace google_breakpad {
 
@@ -80,7 +75,7 @@ static int PrintRegister(const char *name, uint32_t value, int start_col) {
 
   if (start_col + static_cast<ssize_t>(strlen(buffer)) > kMaxWidth) {
     start_col = 0;
-    MYPRINTF("\n ");
+    breakpad_log2("\n ");
   }
   fputs(buffer, stdout);
 
@@ -94,7 +89,7 @@ static int PrintRegister64(const char *name, uint64_t value, int start_col) {
 
   if (start_col + static_cast<ssize_t>(strlen(buffer)) > kMaxWidth) {
     start_col = 0;
-    MYPRINTF("\n ");
+    breakpad_log2("\n ");
   }
   fputs(buffer, stdout);
 
@@ -176,13 +171,13 @@ static void PrintStackContents(const string &indent,
     return;
 
   // Print stack contents.
-  MYPRINTF("\n%sStack contents:", indent.c_str());
+  breakpad_log2("\n%sStack contents:", indent.c_str());
   for(uint64_t address = stack_begin; address < stack_end; ) {
     // Print the start address of this row.
     if (word_length == 4)
-      MYPRINTF("\n%s %08x", indent.c_str(), static_cast<uint32_t>(address));
+      breakpad_log2("\n%s %08x", indent.c_str(), static_cast<uint32_t>(address));
     else
-      MYPRINTF("\n%s %016" PRIx64, indent.c_str(), address);
+      breakpad_log2("\n%s %016" PRIx64, indent.c_str(), address);
 
     // Print data in hex.
     const int kBytesPerRow = 16;
@@ -191,19 +186,19 @@ static void PrintStackContents(const string &indent,
       uint8_t value = 0;
       if (address < stack_end &&
           memory->GetMemoryAtAddress(address, &value)) {
-        MYPRINTF(" %02x", value);
+        breakpad_log2(" %02x", value);
         data_as_string.push_back(isprint(value) ? value : '.');
       } else {
-        MYPRINTF("   ");
+        breakpad_log2("   ");
         data_as_string.push_back(' ');
       }
     }
     // Print data as string.
-    MYPRINTF("  %s", data_as_string.c_str());
+    breakpad_log2("  %s", data_as_string.c_str());
   }
 
   // Try to find instruction pointers from stack.
-  MYPRINTF("\n%sPossible instruction pointers:\n", indent.c_str());
+  breakpad_log2("\n%sPossible instruction pointers:\n", indent.c_str());
   for (uint64_t address = stack_begin; address < stack_end;
        address += word_length) {
     StackFrame pointee_frame;
@@ -228,21 +223,21 @@ static void PrintStackContents(const string &indent,
     // Print function name.
     if (!pointee_frame.function_name.empty()) {
       if (word_length == 4) {
-        MYPRINTF("%s *(0x%08x) = 0x%08x", indent.c_str(),
+        breakpad_log2("%s *(0x%08x) = 0x%08x", indent.c_str(),
                static_cast<uint32_t>(address),
                static_cast<uint32_t>(pointee_frame.instruction));
       } else {
-        MYPRINTF("%s *(0x%016" PRIx64 ") = 0x%016" PRIx64,
+        breakpad_log2("%s *(0x%016" PRIx64 ") = 0x%016" PRIx64,
                indent.c_str(), address, pointee_frame.instruction);
       }
-      MYPRINTF(" <%s> [%s : %d + 0x%" PRIx64 "]\n",
+      breakpad_log2(" <%s> [%s : %d + 0x%" PRIx64 "]\n",
              pointee_frame.function_name.c_str(),
              PathnameStripper::File(pointee_frame.source_file_name).c_str(),
              pointee_frame.source_line,
              pointee_frame.instruction - pointee_frame.source_line_base);
     }
   }
-  MYPRINTF("\n");
+  breakpad_log2("\n");
 }
 
 // PrintStack prints the call stack in |stack| to stdout, in a reasonably
@@ -262,35 +257,35 @@ static void PrintStack(const CallStack *stack,
                        SourceLineResolverInterface* resolver) {
   int frame_count = stack->frames()->size();
   if (frame_count == 0) {
-    MYPRINTF(" <no frames>\n");
+    breakpad_log2(" <no frames>\n");
   }
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
     const StackFrame *frame = stack->frames()->at(frame_index);
-    MYPRINTF("%2d  ", frame_index);
+    breakpad_log2("%2d  ", frame_index);
 
     uint64_t instruction_address = frame->ReturnAddress();
 
     if (frame->module) {
-      MYPRINTF("%s", PathnameStripper::File(frame->module->code_file()).c_str());
+      breakpad_log2("%s", PathnameStripper::File(frame->module->code_file()).c_str());
       if (!frame->function_name.empty()) {
-        MYPRINTF("!%s", frame->function_name.c_str());
+        breakpad_log2("!%s", frame->function_name.c_str());
         if (!frame->source_file_name.empty()) {
           string source_file = PathnameStripper::File(frame->source_file_name);
-          MYPRINTF(" [%s : %d + 0x%" PRIx64 "]",
+          breakpad_log2(" [%s : %d + 0x%" PRIx64 "]",
                  source_file.c_str(),
                  frame->source_line,
                  instruction_address - frame->source_line_base);
         } else {
-          MYPRINTF(" + 0x%" PRIx64, instruction_address - frame->function_base);
+          breakpad_log2(" + 0x%" PRIx64, instruction_address - frame->function_base);
         }
       } else {
-        MYPRINTF(" + 0x%" PRIx64,
+        breakpad_log2(" + 0x%" PRIx64,
                instruction_address - frame->module->base_address());
       }
     } else {
-      MYPRINTF("0x%" PRIx64, instruction_address);
+      breakpad_log2("0x%" PRIx64, instruction_address);
     }
-    MYPRINTF("\n ");
+    breakpad_log2("\n ");
 
     int sequence = 0;
     if (cpu == "x86") {
@@ -608,7 +603,7 @@ static void PrintStack(const CallStack *stack,
                      frame_mips->context.iregs[MD_CONTEXT_MIPS_REG_S7],
                      sequence);
     }
-    MYPRINTF("\n    Found by: %s\n", frame->trust_description().c_str());
+    breakpad_log2("\n    Found by: %s\n", frame->trust_description().c_str());
 
     // Print stack contents.
     if (output_stack_contents && frame_index + 1 < frame_count) {
@@ -630,20 +625,20 @@ static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
   int frame_count = stack->frames()->size();
   for (int frame_index = 0; frame_index < frame_count; ++frame_index) {
     const StackFrame *frame = stack->frames()->at(frame_index);
-    MYPRINTF("%d%c%d%c", thread_num, kOutputSeparator, frame_index,
+    breakpad_log2("%d%c%d%c", thread_num, kOutputSeparator, frame_index,
            kOutputSeparator);
 
     uint64_t instruction_address = frame->ReturnAddress();
 
     if (frame->module) {
       assert(!frame->module->code_file().empty());
-      MYPRINTF("%s", StripSeparator(PathnameStripper::File(
+      breakpad_log2("%s", StripSeparator(PathnameStripper::File(
                      frame->module->code_file())).c_str());
       if (!frame->function_name.empty()) {
-        MYPRINTF("%c%s", kOutputSeparator,
+        breakpad_log2("%c%s", kOutputSeparator,
                StripSeparator(frame->function_name).c_str());
         if (!frame->source_file_name.empty()) {
-          MYPRINTF("%c%s%c%d%c0x%" PRIx64,
+          breakpad_log2("%c%s%c%d%c0x%" PRIx64,
                  kOutputSeparator,
                  StripSeparator(frame->source_file_name).c_str(),
                  kOutputSeparator,
@@ -651,14 +646,14 @@ static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
                  kOutputSeparator,
                  instruction_address - frame->source_line_base);
         } else {
-          MYPRINTF("%c%c%c0x%" PRIx64,
+          breakpad_log2("%c%c%c0x%" PRIx64,
                  kOutputSeparator,  // empty source file
                  kOutputSeparator,  // empty source line
                  kOutputSeparator,
                  instruction_address - frame->function_base);
         }
       } else {
-        MYPRINTF("%c%c%c%c0x%" PRIx64,
+        breakpad_log2("%c%c%c%c0x%" PRIx64,
                kOutputSeparator,  // empty function name
                kOutputSeparator,  // empty source file
                kOutputSeparator,  // empty source line
@@ -667,14 +662,14 @@ static void PrintStackMachineReadable(int thread_num, const CallStack *stack) {
       }
     } else {
       // the printf before this prints a trailing separator for module name
-      MYPRINTF("%c%c%c%c0x%" PRIx64,
+      breakpad_log2("%c%c%c%c0x%" PRIx64,
              kOutputSeparator,  // empty function name
              kOutputSeparator,  // empty source file
              kOutputSeparator,  // empty source line
              kOutputSeparator,
              instruction_address);
     }
-    MYPRINTF("\n");
+    breakpad_log2("\n");
   }
 }
 
@@ -714,7 +709,7 @@ static void PrintModule(
         module->debug_identifier() + ")";
   }
   uint64_t base_address = module->base_address();
-  MYPRINTF("0x%08" PRIx64 " - 0x%08" PRIx64 "  %s  %s%s%s\n",
+  breakpad_log2("0x%08" PRIx64 " - 0x%08" PRIx64 "  %s  %s%s%s\n",
          base_address, base_address + module->size() - 1,
          PathnameStripper::File(module->code_file()).c_str(),
          module->version().empty() ? "???" : module->version().c_str(),
@@ -732,8 +727,8 @@ static void PrintModules(
   if (!modules)
     return;
 
-  MYPRINTF("\n");
-  MYPRINTF("Loaded modules:\n");
+  breakpad_log2("\n");
+  breakpad_log2("Loaded modules:\n");
 
   uint64_t main_address = 0;
   const CodeModule *main_module = modules->GetMainModule();
@@ -772,7 +767,7 @@ static void PrintModulesMachineReadable(const CodeModules *modules) {
        ++module_sequence) {
     const CodeModule *module = modules->GetModuleAtSequence(module_sequence);
     uint64_t base_address = module->base_address();
-    MYPRINTF("Module%c%s%c%s%c%s%c%s%c0x%08" PRIx64 "%c0x%08" PRIx64 "%c%d\n",
+    breakpad_log2("Module%c%s%c%s%c%s%c%s%c0x%08" PRIx64 "%c0x%08" PRIx64 "%c%d\n",
            kOutputSeparator,
            StripSeparator(PathnameStripper::File(module->code_file())).c_str(),
            kOutputSeparator, StripSeparator(module->version()).c_str(),
@@ -795,44 +790,44 @@ void PrintProcessState(const ProcessState& process_state,
   // Print OS and CPU information.
   string cpu = process_state.system_info()->cpu;
   string cpu_info = process_state.system_info()->cpu_info;
-  MYPRINTF("Operating system: %s\n", process_state.system_info()->os.c_str());
-  MYPRINTF("                  %s\n",
+  breakpad_log2("Operating system: %s\n", process_state.system_info()->os.c_str());
+  breakpad_log2("                  %s\n",
          process_state.system_info()->os_version.c_str());
-  MYPRINTF("CPU: %s\n", cpu.c_str());
+  breakpad_log2("CPU: %s\n", cpu.c_str());
   if (!cpu_info.empty()) {
     // This field is optional.
-    MYPRINTF("     %s\n", cpu_info.c_str());
+    breakpad_log2("     %s\n", cpu_info.c_str());
   }
-  MYPRINTF("     %d CPU%s\n",
+  breakpad_log2("     %d CPU%s\n",
          process_state.system_info()->cpu_count,
          process_state.system_info()->cpu_count != 1 ? "s" : "");
-  MYPRINTF("\n");
+  breakpad_log2("\n");
 
   // Print GPU information
   string gl_version = process_state.system_info()->gl_version;
   string gl_vendor = process_state.system_info()->gl_vendor;
   string gl_renderer = process_state.system_info()->gl_renderer;
-  MYPRINTF("GPU:");
+  breakpad_log2("GPU:");
   if (!gl_version.empty() || !gl_vendor.empty() || !gl_renderer.empty()) {
-    MYPRINTF(" %s\n", gl_version.c_str());
-    MYPRINTF("     %s\n", gl_vendor.c_str());
-    MYPRINTF("     %s\n", gl_renderer.c_str());
+    breakpad_log2(" %s\n", gl_version.c_str());
+    breakpad_log2("     %s\n", gl_vendor.c_str());
+    breakpad_log2("     %s\n", gl_renderer.c_str());
   } else {
-    MYPRINTF(" UNKNOWN\n");
+    breakpad_log2(" UNKNOWN\n");
   }
-  MYPRINTF("\n");
+  breakpad_log2("\n");
 
   // Print crash information.
   if (process_state.crashed()) {
-    MYPRINTF("Crash reason:  %s\n", process_state.crash_reason().c_str());
-    MYPRINTF("Crash address: 0x%" PRIx64 "\n", process_state.crash_address());
+    breakpad_log2("Crash reason:  %s\n", process_state.crash_reason().c_str());
+    breakpad_log2("Crash address: 0x%" PRIx64 "\n", process_state.crash_address());
   } else {
-    MYPRINTF("No crash\n");
+    breakpad_log2("No crash\n");
   }
 
   string assertion = process_state.assertion();
   if (!assertion.empty()) {
-    MYPRINTF("Assertion: %s\n", assertion.c_str());
+    breakpad_log2("Assertion: %s\n", assertion.c_str());
   }
 
   // Compute process uptime if the process creation and crash times are
@@ -840,18 +835,18 @@ void PrintProcessState(const ProcessState& process_state,
   if (process_state.time_date_stamp() != 0 &&
       process_state.process_create_time() != 0 &&
       process_state.time_date_stamp() >= process_state.process_create_time()) {
-    MYPRINTF("Process uptime: %d seconds\n",
+    breakpad_log2("Process uptime: %d seconds\n",
            process_state.time_date_stamp() -
                process_state.process_create_time());
   } else {
-    MYPRINTF("Process uptime: not available\n");
+    breakpad_log2("Process uptime: not available\n");
   }
 
   // If the thread that requested the dump is known, print it first.
   int requesting_thread = process_state.requesting_thread();
   if (requesting_thread != -1) {
-    MYPRINTF("\n");
-    MYPRINTF("Thread %d (%s)\n",
+    breakpad_log2("\n");
+    breakpad_log2("Thread %d (%s)\n",
           requesting_thread,
           process_state.crashed() ? "crashed" :
                                     "requested dump, did not crash");
@@ -866,8 +861,8 @@ void PrintProcessState(const ProcessState& process_state,
   for (int thread_index = 0; thread_index < thread_count; ++thread_index) {
     if (thread_index != requesting_thread) {
       // Don't print the crash thread again, it was already printed.
-      MYPRINTF("\n");
-      MYPRINTF("Thread %d\n", thread_index);
+      breakpad_log2("\n");
+      breakpad_log2("Thread %d\n", thread_index);
       PrintStack(process_state.threads()->at(thread_index), cpu,
                  output_stack_contents,
                  process_state.thread_memory_regions()->at(thread_index),
@@ -885,18 +880,18 @@ void PrintProcessStateMachineReadable(const ProcessState& process_state) {
   // OS|{OS Name}|{OS Version}
   // CPU|{CPU Name}|{CPU Info}|{Number of CPUs}
   // GPU|{GPU version}|{GPU vendor}|{GPU renderer}
-  MYPRINTF("OS%c%s%c%s\n", kOutputSeparator,
+  breakpad_log2("OS%c%s%c%s\n", kOutputSeparator,
          StripSeparator(process_state.system_info()->os).c_str(),
          kOutputSeparator,
          StripSeparator(process_state.system_info()->os_version).c_str());
-  MYPRINTF("CPU%c%s%c%s%c%d\n", kOutputSeparator,
+  breakpad_log2("CPU%c%s%c%s%c%d\n", kOutputSeparator,
          StripSeparator(process_state.system_info()->cpu).c_str(),
          kOutputSeparator,
          // this may be empty
          StripSeparator(process_state.system_info()->cpu_info).c_str(),
          kOutputSeparator,
          process_state.system_info()->cpu_count);
-  MYPRINTF("GPU%c%s%c%s%c%s\n", kOutputSeparator,
+  breakpad_log2("GPU%c%s%c%s%c%s\n", kOutputSeparator,
          StripSeparator(process_state.system_info()->gl_version).c_str(),
          kOutputSeparator,
          StripSeparator(process_state.system_info()->gl_vendor).c_str(),
@@ -907,9 +902,9 @@ void PrintProcessStateMachineReadable(const ProcessState& process_state) {
 
   // Print crash information.
   // Crash|{Crash Reason}|{Crash Address}|{Crashed Thread}
-  MYPRINTF("Crash%c", kOutputSeparator);
+  breakpad_log2("Crash%c", kOutputSeparator);
   if (process_state.crashed()) {
-    MYPRINTF("%s%c0x%" PRIx64 "%c",
+    breakpad_log2("%s%c0x%" PRIx64 "%c",
            StripSeparator(process_state.crash_reason()).c_str(),
            kOutputSeparator, process_state.crash_address(), kOutputSeparator);
   } else {
@@ -917,23 +912,23 @@ void PrintProcessStateMachineReadable(const ProcessState& process_state) {
     // instead of the unhelpful "No crash"
     string assertion = process_state.assertion();
     if (!assertion.empty()) {
-      MYPRINTF("%s%c%c", StripSeparator(assertion).c_str(),
+      breakpad_log2("%s%c%c", StripSeparator(assertion).c_str(),
              kOutputSeparator, kOutputSeparator);
     } else {
-      MYPRINTF("No crash%c%c", kOutputSeparator, kOutputSeparator);
+      breakpad_log2("No crash%c%c", kOutputSeparator, kOutputSeparator);
     }
   }
 
   if (requesting_thread != -1) {
-    MYPRINTF("%d\n", requesting_thread);
+    breakpad_log2("%d\n", requesting_thread);
   } else {
-    MYPRINTF("\n");
+    breakpad_log2("\n");
   }
 
   PrintModulesMachineReadable(process_state.modules());
 
   // blank line to indicate start of threads
-  MYPRINTF("\n");
+  breakpad_log2("\n");
 
   // If the thread that requested the dump is known, print it first.
   if (requesting_thread != -1) {

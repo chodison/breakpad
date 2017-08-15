@@ -66,6 +66,10 @@
 #include "base/mylog.h"
 #endif
 
+void breakpad_log(void* model, int level, const char *fmt, ...);
+void breakpad_log2(const char *fmt, ...);
+void breakpad_log_set_callback(void (*callback)(void*, int, const char*, va_list));
+
 #ifdef BP_LOGGING_INCLUDE
 #include BP_LOGGING_INCLUDE
 #endif  // BP_LOGGING_INCLUDE

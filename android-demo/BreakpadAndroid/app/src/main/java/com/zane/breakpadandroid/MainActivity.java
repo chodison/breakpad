@@ -18,11 +18,23 @@ import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
 import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
+/**
+ * 说明：
+ *      1、点击 crash 制造 crash (app 闪退)
+ *      2、点击 process 解析
+ *
+ *      3、重新进入 app 之后检查是否存在 dump 文件, 存在则解析并"上传文件"(<-假装的啊, 现在木有后台), 随后删除文件 (待定)
+ *
+ * 作者：zhouzhan
+ * 日期：17/8/15 14:14
+ */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String DUMP_DIR = Environment.getExternalStorageDirectory().getAbsolutePath()+"/dumps";
+    private static final String SDCARD_DIR = Environment.getExternalStorageDirectory().getAbsolutePath();
+    private static final String DUMP_DIR = SDCARD_DIR +"/dumps";
     private static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
@@ -30,33 +42,32 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // TODO: 17/8/11 for test
+        checkDir();
         ExceptionHandler.init(DUMP_DIR);
     }
 
     public void doClick(View view){
-
         int id = view.getId();
         switch (id){
             case R.id.bt_crash:
-
                 ExceptionHandler.testNativeCrash();
                 break;
             case R.id.bt_processor:
                 doProcess();
                 break;
         }
-
-
     }
 
+    /**
+     * 解析 dump 文件
+     */
     private void doProcess() {
         Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
                 File dir = new File(DUMP_DIR);
                 File[] files = dir.listFiles();
-                for (File file : files){
+                for (File file : files) {
                     String dumpPath = file.getAbsolutePath();
                     String crashFileName = DUMP_DIR + "/crash.txt";
                     boolean exec = DumpProcessor.exec(new String[]{crashFileName, dumpPath});
@@ -65,25 +76,42 @@ public class MainActivity extends AppCompatActivity {
             }
         }).subscribeOn(Schedulers.newThread())
                 .observeOn(AndroidSchedulers.mainThread())
-                .subscribe(new Observer<Boolean>() {
+                .subscribe(new Consumer<Boolean>() {
                     @Override
-                    public void onSubscribe(@NonNull Disposable d) {
-
+                    public void accept(Boolean aBoolean) throws Exception {
+                        Log.e(TAG, "processed: " + aBoolean);
                     }
+                });
+    }
 
+
+    /**
+     * 检查是否存在 dump 文件夹, 木有则创建
+     */
+    private void checkDir() {
+        Observable.create(new ObservableOnSubscribe<Boolean>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
+                File sdCardDir = new File(SDCARD_DIR);
+                if (!sdCardDir.exists()) {
+                    e.onNext(false);
+                    return;
+                }
+                File dir = new File(DUMP_DIR);
+                if (dir.exists() && dir.isDirectory()){
+                    e.onNext(true);
+                    return;
+                }
+                // 创建文件夹
+                boolean mkdir = dir.mkdir();
+                e.onNext(mkdir);
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Boolean>() {
                     @Override
-                    public void onNext(@NonNull Boolean b) {
-                        Log.e(TAG, "processed: " + b);
-                    }
-
-                    @Override
-                    public void onError(@NonNull Throwable e) {
-
-                    }
-
-                    @Override
-                    public void onComplete() {
-
+                    public void accept(Boolean aBoolean) throws Exception {
+                        Log.e(TAG, "checkDir: " + aBoolean);
                     }
                 });
     }

@@ -90,3 +90,11 @@ src/third_party/protobuf
 src/tools/gyp
 
 android-demo/BreakpadAndroid/breakpad/obj
+android-demo/BreakpadAndroid/breakpad/bin
+android-demo/BreakpadAndroid/breakpad/gen
+android-demo/BreakpadAndroid/breakpad/libs
+
+android-demo/MyBreadkpad/obj
+android-demo/MyBreadkpad/bin
+android-demo/MyBreadkpad/gen
+android-demo/MyBreadkpad/libs

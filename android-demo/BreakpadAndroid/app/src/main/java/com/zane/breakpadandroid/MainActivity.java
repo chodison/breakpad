@@ -68,10 +68,20 @@ public class MainActivity extends AppCompatActivity {
                 File dir = new File(DUMP_DIR);
                 File[] files = dir.listFiles();
                 for (File file : files) {
-                    String dumpPath = file.getAbsolutePath();
-                    String crashFileName = DUMP_DIR + "/crash.txt";
-                    boolean exec = DumpProcessor.exec(new String[]{crashFileName, dumpPath});
-                    e.onNext(exec);
+                    String fileName = file.getName();
+                    String lastName = ".dmp";
+                    int lastIndexOf = fileName.lastIndexOf(lastName);
+
+                    if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .dmp 是后缀名
+                        String dumpPath = file.getAbsolutePath();
+                        String crashFileName = DUMP_DIR + "/crash.txt";
+                        boolean exec = DumpProcessor.exec(new String[]{crashFileName, dumpPath});
+                        if (exec) { // 解析完成之后 删除 dmp 文件
+                            boolean isDelete = file.delete();
+                            Log.e(TAG, "isDelete: " + isDelete);
+                        }
+                        e.onNext(exec);
+                    }
                 }
             }
         }).subscribeOn(Schedulers.newThread())

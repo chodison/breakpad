@@ -12,7 +12,7 @@ static char szFileName[MAX_LOG_FILE_NAME_LEN] = {0};
 static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
     char line[MAX_LOGTEXT_LEN] = {0};
-    memset(line, 0, 1024);
+    memset(line, 0, MAX_LOGTEXT_LEN);
 
     if(vsnprintf(line, sizeof(line) - 1, fmt, vl) >= 0)
     {

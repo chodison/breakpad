@@ -75,11 +75,11 @@ public class MainActivity extends AppCompatActivity {
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .dmp 是后缀名
                         String dumpPath = file.getAbsolutePath();
                         String crashFileName = DUMP_DIR + "/crash.txt";
-                        boolean exec = DumpProcessor.exec(new String[]{crashFileName, dumpPath});
-                        if (exec) { // 解析完成之后 删除 dmp 文件
-                            boolean isDelete = file.delete();
-                            Log.e(TAG, "isDelete: " + isDelete);
-                        }
+                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
+//                        if (exec) { // 解析完成之后 删除 dmp 文件
+//                            boolean isDelete = file.delete();
+//                            Log.e(TAG, "isDelete: " + isDelete);
+//                        }
                         e.onNext(exec);
                     }
                 }

@@ -8,6 +8,7 @@ import android.util.Log;
 
 public class DumpProcessor {
     private static String TAG = "DumpProcessor";
+    private static String[] app_so = {"libbreakpad_client.so", "libbreakpad_processor.so"};
 
     static boolean loadBreakpadSuccess = false;
 
@@ -29,16 +30,16 @@ public class DumpProcessor {
      * param1:dump file
      * param2:processed file
      */
-    public static boolean exec(String[] commands) {
+    public static boolean exec(String[] commands, String printf_path) {
         if (commands.length < 2) {
             Log.e(TAG, "commands is error!");
             return false;
         }
         if(loadBreakpadSuccess) {
-            return nativeExec(commands) == 0;
+            return nativeExec(commands, printf_path, app_so) == 0;
         }
         return false;
     }
 
-    private native static int nativeExec(String[] commands);
+    private native static int nativeExec(String[] commands, String printf_path, String[] check_sos);
 }

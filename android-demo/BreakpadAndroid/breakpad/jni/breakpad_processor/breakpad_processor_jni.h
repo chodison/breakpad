@@ -7,7 +7,8 @@
 extern "C" {
 #endif
 
-JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpProcessor_nativeExec(JNIEnv *env, jobject obj, jobjectArray commands);
+JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpProcessor_nativeExec(JNIEnv *env, jobject obj,
+		jobjectArray commands, jstring printf_path_js, jobjectArray check_sos);
 
 #ifdef __cplusplus
 };

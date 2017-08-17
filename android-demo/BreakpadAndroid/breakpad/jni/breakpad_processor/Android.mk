@@ -70,8 +70,6 @@ LOCAL_ARM_MODE := arm
 
 # List of client source files, directly taken from Makefile.am
 LOCAL_SRC_FILES 	+=\
-    breakpad_processor_jni.cc \
-    minidump_stackwalk.cc \
 	$(MY_APP_JNI_ROOT)/src/processor/basic_code_modules.cc \
 	$(MY_APP_JNI_ROOT)/src/processor/basic_source_line_resolver.cc\
 	$(MY_APP_JNI_ROOT)/src/processor/call_stack.cc\
@@ -114,6 +112,26 @@ LOCAL_LDLIBS             := -llog -latomic
 LOCAL_SHARED_LIBRARIES :=
 LOCAL_STATIC_LIBRARIES :=
 
+ifeq ($(IS_ENABLE_STATIC_LIB),false)
+##单独编译动态库
+LOCAL_SRC_FILES += minidump_stackwalk.cc
+LOCAL_SRC_FILES += breakpad_processor_jni.cc 
 include $(BUILD_SHARED_LIBRARY)
+else
+include $(BUILD_STATIC_LIBRARY)
+#minidump_stackwalk exe file
+include $(CLEAR_VARS)
+LOCAL_MODULE := minidump_stackwalk
+LOCAL_CPP_EXTENSION := .cc
+LOCAL_SRC_FILES := minidump_stackwalk_exe.cc 
+LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \
+                           $(MY_APP_JNI_ROOT)/src \
+                           $(MY_APP_JNI_ROOT)
+LOCAL_LDLIBS             := -llog -latomic
+
+LOCAL_SHARED_LIBRARIES := 
+LOCAL_STATIC_LIBRARIES := breakpad_processor
+include $(BUILD_EXECUTABLE)
+endif
 
 # Done.

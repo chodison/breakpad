@@ -70,7 +70,6 @@ LOCAL_ARM_MODE := arm
 
 # List of client source files, directly taken from Makefile.am
 LOCAL_SRC_FILES := \
-    breakpad_client_jni.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/crash_generation/crash_generation_client.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/dump_writer_common/thread_info.cc \
     $(MY_APP_JNI_ROOT)/src/client/linux/dump_writer_common/ucontext_reader.cc \
@@ -101,6 +100,12 @@ LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \
 #LOCAL_EXPORT_LDLIBS     := -llog
 LOCAL_LDLIBS             := -llog -latomic
 
+ifeq ($(IS_ENABLE_STATIC_LIB),false)
+##单独编译动态库
+LOCAL_SRC_FILES += breakpad_client_jni.cc 
 include $(BUILD_SHARED_LIBRARY)
+else
+include $(BUILD_STATIC_LIBRARY)
+endif
 
 # Done.

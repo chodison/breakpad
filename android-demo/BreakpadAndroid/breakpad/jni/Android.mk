@@ -5,5 +5,22 @@ LOCAL_PATH := $(call my-dir)
 
 MY_APP_JNI_ROOT := $(realpath $(LOCAL_PATH))
 
+ifeq ($(IS_ENABLE_STATIC_LIB),true)
+#libmybreakpad
+include $(CLEAR_VARS)
+LOCAL_MODULE := mybreakpad
+LOCAL_SRC_FILES :=  
+LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \
+                           $(MY_APP_JNI_ROOT)/src \
+                           $(MY_APP_JNI_ROOT)
+LOCAL_LDLIBS := -llog -latomic
 
+LOCAL_SHARED_LIBRARIES := 
+LOCAL_STATIC_LIBRARIES := breakpad_processor breakpad_client
+include $(BUILD_SHARED_LIBRARY)
+
+include $(MY_APP_JNI_ROOT)/breakpad_client/Android.mk
+include $(MY_APP_JNI_ROOT)/breakpad_processor/Android.mk
+else
 include $(call all-subdir-makefiles)
+endif

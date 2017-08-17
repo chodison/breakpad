@@ -8,3 +8,5 @@ APP_CPPFLAGS += -std=gnu++11 -fexceptions
 ifeq ($(APP_DEBUG), true)
 APP_CFLAGS += -g
 endif
+#
+IS_ENABLE_STATIC_LIB := false

@@ -59,6 +59,8 @@
 
 #include <iostream>
 #include <string>
+#include <ostream>
+#include <sstream>
 
 #include "common/using_std_string.h"
 #include "google_breakpad/common/breakpad_types.h"
@@ -113,12 +115,25 @@ class LogStream {
   // Finish logging by printing a newline and flushing the output stream.
   ~LogStream();
 
-  template<typename T> std::ostream& operator<<(const T &t) {
+//  template<typename T> std::ostream& operator<<(const T &t);
+
+  template<typename T>
+  std::ostream& operator<<(const T &t) {
+  	  std::ostringstream ost;
+  	  ost<< time_string << ": " << file_ << ":" <<
+  	             line_ << " "<<t;
+  	  std::string logstr = ost.str();
+  	  report_log(alog_level, logstr.c_str());
     return stream_ << t;
+
   }
 
  private:
   std::ostream &stream_;
+  char time_string[20];
+  char* file_;
+  int line_;
+  int alog_level;
 
   // Disallow copy constructor and assignment operator
   explicit LogStream(const LogStream &that);

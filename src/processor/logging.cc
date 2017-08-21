@@ -88,40 +88,36 @@ LogStream::LogStream(std::ostream &stream, Severity severity,
 #else
   localtime_r(&clock, &tm_struct);
 #endif
-  char time_string[20];
   strftime(time_string, sizeof(time_string), "%Y-%m-%d %H:%M:%S", &tm_struct);
 
   const char *severity_string = "UNKNOWN_SEVERITY";
   switch (severity) {
     case SEVERITY_INFO:
       severity_string = "INFO";
+      alog_level = ANDROID_LOG_INFO;
       break;
     case SEVERITY_ERROR:
       severity_string = "ERROR";
+      alog_level = ANDROID_LOG_ERROR;
       break;
   }
 
   stream_ << time_string << ": " << PathnameStripper::File(file) << ":" <<
              line << ": " << severity_string << ": ";
-#ifdef __ANDROID__
-  int alog_level = ANDROID_LOG_VERBOSE;
-  char alog_text[2048];
-  memset(alog_text, 0, 2048);
-  switch(severity) {
-  case SEVERITY_INFO:
-	  alog_level = ANDROID_LOG_INFO;
-	  break;
-  case SEVERITY_ERROR:
-	  alog_level = ANDROID_LOG_ERROR;
-	  break;
-  default:
-	  alog_level = ANDROID_LOG_VERBOSE;
-	  break;
-  }
-  snprintf(alog_text,2048,"[%s][%s][%s][%d]",time_string,severity_string, PathnameStripper::File(file).c_str(), line);
-  //report_log(alog_level, alog_text);
-#endif
+  file_ = (char*)PathnameStripper::File(file).c_str();
+  line_ = line;
 }
+
+//template<typename T>
+//std::ostream& LogStream::operator<<(const T &t) {
+//	  std::ostringstream ost;
+//	  ost<< time_string << ": " << file_ << ":" <<
+//	             line_ << " "<<t;
+//	  std::string logstr = ost.str();
+//	  report_log(alog_level, logstr.c_str());
+//  return stream_ << t;
+//
+//}
 
 LogStream::~LogStream() {
   stream_ << std::endl;

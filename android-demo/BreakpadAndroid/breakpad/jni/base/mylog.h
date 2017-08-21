@@ -26,7 +26,7 @@
 #define VLOG(level, TAG, ...)    ((void)__android_log_vprint(level, TAG, __VA_ARGS__))
 #define ALOG(level, TAG, ...)    ((void)__android_log_print(level, TAG, __VA_ARGS__))
 
-static int report_log(int alog_level, char* alog_text) {
+static int report_log(int alog_level, const char* alog_text) {
 	ALOG(alog_level, MODULE_NAME, "%s", alog_text);
 	return 0;
 }

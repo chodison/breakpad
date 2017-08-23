@@ -8,6 +8,7 @@ import android.view.View;
 
 import com.chodison.mybreakpad.DumpProcessor;
 import com.chodison.mybreakpad.ExceptionHandler;
+import com.chodison.mybreakpad.NativeMybreakpad;
 
 import java.io.File;
 
@@ -36,6 +37,7 @@ public class MainActivity extends AppCompatActivity {
     private static final String SDCARD_DIR = Environment.getExternalStorageDirectory().getAbsolutePath();
     private static final String DUMP_DIR = SDCARD_DIR +"/dumps";
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static final String[] app_so = {"libtest1.so","libmybreakpad.so","libtest2.so"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,14 +45,16 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         checkDir();
-        ExceptionHandler.init(DUMP_DIR);
+//        ExceptionHandler.init(DUMP_DIR);
+        NativeMybreakpad.init(DUMP_DIR);
     }
 
     public void doClick(View view){
         int id = view.getId();
         switch (id){
             case R.id.bt_crash:
-                ExceptionHandler.testNativeCrash();
+//                ExceptionHandler.testNativeCrash();
+                NativeMybreakpad.testNativeCrash();
                 break;
             case R.id.bt_processor:
                 doProcess();
@@ -75,7 +79,8 @@ public class MainActivity extends AppCompatActivity {
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .dmp 是后缀名
                         String dumpPath = file.getAbsolutePath();
                         String crashFileName = DUMP_DIR + "/crash.txt";
-                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
+//                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
+                        boolean exec = NativeMybreakpad.dumpFileProcess(dumpPath, crashFileName, app_so);
 //                        if (exec) { // 解析完成之后 删除 dmp 文件
 //                            boolean isDelete = file.delete();
 //                            Log.e(TAG, "isDelete: " + isDelete);
@@ -90,6 +95,12 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void accept(Boolean aBoolean) throws Exception {
                         Log.e(TAG, "processed: " + aBoolean);
+                        if(aBoolean) {
+                            String[] crashSoName = NativeMybreakpad.getCrashSoName();
+                            for(int i = 0; i < crashSoName.length; i ++) {
+                                Log.e(TAG, "crash so name["+i+"]: " + crashSoName[i].toString());
+                            }
+                        }
                     }
                 });
     }

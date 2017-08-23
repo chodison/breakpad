@@ -9,4 +9,4 @@ ifeq ($(APP_DEBUG), true)
 APP_CFLAGS += -g
 endif
 #
-IS_ENABLE_STATIC_LIB := false
+IS_ENABLE_STATIC_LIB := true

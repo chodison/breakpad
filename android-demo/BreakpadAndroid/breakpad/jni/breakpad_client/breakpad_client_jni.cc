@@ -13,7 +13,7 @@ bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor, void* c
 
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_ExceptionHandler_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir)
 {
-    const char *path = env->GetStringUTFChars(dumpfile_dir, nullptr);
+    const char *path = env->GetStringUTFChars(dumpfile_dir, NULL);
 
     google_breakpad::MinidumpDescriptor descriptor(path);
     static google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback, NULL, true, -1);

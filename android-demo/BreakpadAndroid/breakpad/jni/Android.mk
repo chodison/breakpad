@@ -9,7 +9,11 @@ ifeq ($(IS_ENABLE_STATIC_LIB),true)
 #libmybreakpad
 include $(CLEAR_VARS)
 LOCAL_MODULE := mybreakpad
-LOCAL_SRC_FILES :=  
+LOCAL_SRC_FILES :=  \
+					minidump_processor.cc \
+					mybreakpad.cc \
+					mybreakpad_jni.cc
+					
 LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \
                            $(MY_APP_JNI_ROOT)/src \
                            $(MY_APP_JNI_ROOT)

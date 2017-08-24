@@ -2,4 +2,5 @@
     <string name="app_name">BreakpadAndroid</string>
     <string name="crash">crash</string>
     <string name="process">process</string>
+    <string name="symbols">symbols</string>
 </resources>

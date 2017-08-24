@@ -7,6 +7,7 @@ import android.util.Log;
 import android.view.View;
 
 import com.chodison.mybreakpad.DumpProcessor;
+import com.chodison.mybreakpad.DumpSymbols;
 import com.chodison.mybreakpad.ExceptionHandler;
 import com.chodison.mybreakpad.NativeMybreakpad;
 
@@ -59,6 +60,9 @@ public class MainActivity extends AppCompatActivity {
             case R.id.bt_processor:
                 doProcess();
                 break;
+            case R.id.bt_symbols:
+                doProcessSymbols();
+                break;
         }
     }
 
@@ -105,6 +109,38 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
+    /**
+     * 生成 symbols 文件
+     */
+    private void doProcessSymbols() {
+        Observable.create(new ObservableOnSubscribe<Boolean>() {
+            @Override
+            public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
+                File dir = new File(DUMP_DIR);
+                File[] files = dir.listFiles();
+                for (File file : files) {
+                    String fileName = file.getName();
+                    String lastName = ".so";
+                    int lastIndexOf = fileName.lastIndexOf(lastName);
+
+                    if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .so 是后缀名
+                        String dumpPath = file.getAbsolutePath();
+                        String symFileName = DUMP_DIR +"/" + fileName+".sym";
+                        boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
+                        e.onNext(exec);
+                    }
+                }
+            }
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        Log.e(TAG, "chodison Exec ===> processed: " + aBoolean);
+
+                    }
+                });
+    }
 
     /**
      * 检查是否存在 dump 文件夹, 木有则创建

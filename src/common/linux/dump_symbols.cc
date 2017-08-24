@@ -103,6 +103,13 @@ using google_breakpad::wasteful_vector;
 
 // Define SHT_ANDROID_REL and SHT_ANDROID_RELA if not defined by the host.
 // Sections with this type contain Android packed relocations.
+#ifdef __ANDROID__
+#ifndef SHT_LOOS
+//ndk/platforms/android-20/include/sys/exec_elf.h
+#define SHT_LOOS  0x60000000 /* Operating system specific range */
+#endif
+#endif
+
 #ifndef SHT_ANDROID_REL
 #define SHT_ANDROID_REL  (SHT_LOOS + 1)
 #endif
@@ -1046,6 +1053,20 @@ bool WriteSymbolFile(const string &obj_file,
   return result;
 }
 
+bool WriteSymbolFile(const string &obj_file,
+					 const string &save_file,
+                     const std::vector<string>& debug_dirs,
+                     const DumpOptions& options,
+                     std::ostream &sym_stream) {
+  Module* module;
+  if (!ReadSymbolData(obj_file, debug_dirs, options, &module))
+    return false;
+
+  bool result = module->Write(sym_stream, options.symbol_data, save_file);
+  delete module;
+  return result;
+}
+
 // Read the selected object file's debugging information, and write out the
 // header only to |stream|. Return true on success; if an error occurs, report
 // it and return false.
@@ -1083,6 +1104,43 @@ bool WriteSymbolFileHeader(const string& obj_file,
   }
 
   return module->Write(sym_stream, ALL_SYMBOL_DATA);
+}
+
+bool WriteSymbolFileHeader(const string& obj_file,
+						   const string& save_file,
+                           std::ostream &sym_stream) {
+  MmapWrapper map_wrapper;
+  void* elf_header = NULL;
+  if (!LoadELF(obj_file, &map_wrapper, &elf_header)) {
+    fprintf(stderr, "Could not load ELF file: %s\n", obj_file.c_str());
+    return false;
+  }
+
+  if (!IsValidElf(elf_header)) {
+    fprintf(stderr, "Not a valid ELF file: %s\n", obj_file.c_str());
+    return false;
+  }
+
+  int elfclass = ElfClass(elf_header);
+  scoped_ptr<Module> module;
+  if (elfclass == ELFCLASS32) {
+    if (!InitModuleForElfClass<ElfClass32>(
+        reinterpret_cast<const Elf32_Ehdr*>(elf_header), obj_file, module)) {
+      fprintf(stderr, "Failed to load ELF module: %s\n", obj_file.c_str());
+      return false;
+    }
+  } else if (elfclass == ELFCLASS64) {
+    if (!InitModuleForElfClass<ElfClass64>(
+        reinterpret_cast<const Elf64_Ehdr*>(elf_header), obj_file, module)) {
+      fprintf(stderr, "Failed to load ELF module: %s\n", obj_file.c_str());
+      return false;
+    }
+  } else {
+    fprintf(stderr, "Unsupported module file: %s\n", obj_file.c_str());
+    return false;
+  }
+
+  return module->Write(sym_stream, ALL_SYMBOL_DATA, save_file);
 }
 
 bool ReadSymbolData(const string& obj_file,

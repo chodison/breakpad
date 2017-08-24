@@ -16,9 +16,15 @@ public class DumpProcessor {
         try {
             System.loadLibrary("breakpad_processor");
             loadBreakpadSuccess = true;
+        } catch (UnsatisfiedLinkError ex) {
+            loadBreakpadSuccess = false;
+            Log.e(TAG, "fail to load libbreakpad_processor.so,msg:"+ex.getMessage());
         } catch (Exception e) {
             loadBreakpadSuccess = false;
-            Log.e(TAG, "fail to load breakpad_processor");
+            Log.e(TAG, "fail to load libbreakpad_processor.so,msg:"+e.getMessage());
+        } catch (Throwable e) {
+            loadBreakpadSuccess = false;
+            Log.e(TAG, "fail to load libbreakpad_processor.so,msg:"+e.getMessage());
         }
     }
 

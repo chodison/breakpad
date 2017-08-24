@@ -25,6 +25,7 @@ include $(BUILD_SHARED_LIBRARY)
 
 include $(MY_APP_JNI_ROOT)/breakpad_client/Android.mk
 include $(MY_APP_JNI_ROOT)/breakpad_processor/Android.mk
+include $(MY_APP_JNI_ROOT)/breakpad_symbols/Android.mk
 else
 include $(call all-subdir-makefiles)
 endif

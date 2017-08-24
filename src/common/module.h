@@ -276,6 +276,7 @@ class Module {
   // Addresses in the output are all relative to the load address
   // established by SetLoadAddress.
   bool Write(std::ostream &stream, SymbolData symbol_data);
+  bool Write(std::ostream &stream, SymbolData symbol_data, const string &save_file);
 
   string name() const { return name_; }
   string os() const { return os_; }

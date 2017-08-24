@@ -39,7 +39,10 @@
 #include <string.h>
 
 #include <iostream>
+#include <fstream>
 #include <utility>
+
+#include "base/mylog.h"
 
 namespace google_breakpad {
 
@@ -318,7 +321,119 @@ bool Module::Write(std::ostream &stream, SymbolData symbol_data) {
       }
     }
   }
+  return true;
+}
 
+bool Module::Write(std::ostream &stream, SymbolData symbol_data, const string &save_file) {
+	report_log(ANDROID_LOG_ERROR, "Write syms file begin!");
+	bool ret = false;
+	std::streambuf* coutBuf = stream.rdbuf();
+	std::ofstream of(save_file.c_str());
+	std::streambuf* fileBuf = of.rdbuf();
+	stream.rdbuf(fileBuf);
+
+  if (!stream.good()) {
+	  ret = ReportError();
+	  goto failed;
+  }
+
+  if (!code_id_.empty()) {
+    stream << "INFO CODE_ID " << code_id_ << endl;
+  }
+
+  if (symbol_data != ONLY_CFI) {
+    AssignSourceIds();
+
+    // Write out files.
+    for (FileByNameMap::iterator file_it = files_.begin();
+         file_it != files_.end(); ++file_it) {
+      File *file = file_it->second;
+      if (file->source_id >= 0) {
+        stream << "FILE " << file->source_id << " " <<  file->name << endl;
+        if (!stream.good()) {
+      	  ret = ReportError();
+      	  goto failed;
+        }
+      }
+    }
+
+    // Write out functions and their lines.
+    for (FunctionSet::const_iterator func_it = functions_.begin();
+         func_it != functions_.end(); ++func_it) {
+      Function *func = *func_it;
+      stream << "FUNC " << hex
+             << (func->address - load_address_) << " "
+             << func->size << " "
+             << func->parameter_size << " "
+             << func->name << dec << endl;
+      if (!stream.good()) {
+    	  ret = ReportError();
+    	  goto failed;
+      }
+
+      for (vector<Line>::iterator line_it = func->lines.begin();
+           line_it != func->lines.end(); ++line_it) {
+        stream << hex
+               << (line_it->address - load_address_) << " "
+               << line_it->size << " "
+               << dec
+               << line_it->number << " "
+               << line_it->file->source_id << endl;
+        if (!stream.good()) {
+      	  ret = ReportError();
+      	  goto failed;
+        }
+      }
+    }
+
+    // Write out 'PUBLIC' records.
+    for (ExternSet::const_iterator extern_it = externs_.begin();
+         extern_it != externs_.end(); ++extern_it) {
+      Extern *ext = *extern_it;
+      stream << "PUBLIC " << hex
+             << (ext->address - load_address_) << " 0 "
+             << ext->name << dec << endl;
+    }
+  }
+
+  if (symbol_data != NO_CFI) {
+    // Write out 'STACK CFI INIT' and 'STACK CFI' records.
+    vector<StackFrameEntry *>::const_iterator frame_it;
+    for (frame_it = stack_frame_entries_.begin();
+         frame_it != stack_frame_entries_.end(); ++frame_it) {
+      StackFrameEntry *entry = *frame_it;
+      stream << "STACK CFI INIT " << hex
+             << (entry->address - load_address_) << " "
+             << entry->size << " " << dec;
+      if (!stream.good()
+          || !WriteRuleMap(entry->initial_rules, stream)) {
+    	  ret = ReportError();
+    	  goto failed;
+      }
+
+      stream << endl;
+
+      // Write out this entry's delta rules as 'STACK CFI' records.
+      for (RuleChangeMap::const_iterator delta_it = entry->rule_changes.begin();
+           delta_it != entry->rule_changes.end(); ++delta_it) {
+        stream << "STACK CFI " << hex
+               << (delta_it->first - load_address_) << " " << dec;
+        if (!stream.good()
+            || !WriteRuleMap(delta_it->second, stream)) {
+          ret = ReportError();
+    	  goto failed;
+        }
+
+        stream << endl;
+      }
+    }
+  }
+
+failed:
+  of.flush();
+  of.close();
+  stream.rdbuf(coutBuf);
+  report_log(ANDROID_LOG_ERROR, "Write syms file end!");
   return true;
 }
 

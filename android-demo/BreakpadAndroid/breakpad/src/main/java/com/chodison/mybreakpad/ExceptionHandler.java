@@ -16,9 +16,15 @@ public class ExceptionHandler {
         try {
             System.loadLibrary("breakpad_client");
             loadBreakpadSuccess = true;
+        } catch (UnsatisfiedLinkError ex) {
+            loadBreakpadSuccess = false;
+            Log.e(TAG, "fail to load libbreakpad_client.so,msg:"+ex.getMessage());
         } catch (Exception e) {
             loadBreakpadSuccess = false;
-            Log.e(TAG, "fail to load breakpad_client");
+            Log.e(TAG, "fail to load libbreakpad_client.so,msg:"+e.getMessage());
+        } catch (Throwable e) {
+            loadBreakpadSuccess = false;
+            Log.e(TAG, "fail to load libbreakpad_client.so,msg:"+e.getMessage());
         }
     }
 

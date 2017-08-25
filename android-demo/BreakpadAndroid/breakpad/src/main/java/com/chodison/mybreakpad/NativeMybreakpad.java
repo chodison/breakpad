@@ -36,6 +36,10 @@ public class NativeMybreakpad {
         }
     }
 
+    //native层调用，当发生崩溃时。
+    private static void onNativeCrash(int succeeded) {
+        Log.e(TAG, "onNativeCrash callback:"+succeeded);
+    }
     /**
      * mybreakpad初始化,当初始化失败时，根据返回值确定原因，
      * 若为TYPE_INIT_LOADSO_FAIL则此mybreakpad模块不可用

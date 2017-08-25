@@ -5,10 +5,44 @@
 #include "mybreakpad.h"
 #include "base/mylog.h"
 
+static google_breakpad::ExceptionHandler* mExceptionHandler;
+JavaVM *mJVM = NULL;
+
+#define NATIVE_CLASS_NAME "com/chodison/mybreakpad/NativeMybreakpad"
+
+void onNativeCrash(int success) {
+    JNIEnv *env = 0;
+    int result = mJVM->GetEnv((void **) &env, JNI_VERSION_1_4);
+    if (result != JNI_OK) {
+        LOGE("mJVM->GetEnv null");
+        return;
+    }
+    jclass crashClass = env->FindClass(NATIVE_CLASS_NAME);
+    if (crashClass == NULL) {
+        LOGE("FindClass %s null",NATIVE_CLASS_NAME);
+        return;
+    }
+    jmethodID crashReportMethod = env->GetStaticMethodID(crashClass,
+            "onNativeCrash", "(I)V");
+    if (crashReportMethod == NULL) {
+        LOGE("GetMethod onNativeCrash null");
+        return;
+    }
+    env->CallStaticVoidMethod(crashClass, crashReportMethod, success);
+    LOGI("onNativeCrash ===> succeeded %d", success);
+}
+
 bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor, void* context, bool succeeded)
 {
+	onNativeCrash(succeeded ? 1:0);
     LOGI("DumpCallback ===> succeeded %d", succeeded);
     return succeeded;
+}
+
+jint JNI_OnLoad(JavaVM *vm, void* /*reserved*/) {
+    LOGI("JNI_OnLoad");
+    mJVM = vm;
+    return JNI_VERSION_1_4;
 }
 
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir)
@@ -16,7 +50,8 @@ JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(
     const char *path = env->GetStringUTFChars(dumpfile_dir, NULL);
 
     google_breakpad::MinidumpDescriptor descriptor(path);
-    static google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback, NULL, true, -1);
+//    static google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback, NULL, true, -1);
+    mExceptionHandler = new google_breakpad::ExceptionHandler(descriptor, NULL, DumpCallback, NULL, true, -1);
     env->ReleaseStringUTFChars(dumpfile_dir, path);
 
     LOGI("nativeInit ===> breakpad initialized succeeded, dump file will be saved at %s", path);

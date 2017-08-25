@@ -22,13 +22,15 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
     {
     	if(strstr(line, "Loaded modules"))
     		needCheck = false;
+    	//检查每一行
     	if(needCheck && soInfo.so_num > 0) {
     		int i = 0;
+    		//当出现崩溃的so后紧接着下一行将是堆栈地址，没有就跳过
     		if(needGetAddr) {
+    			needGetAddr = false;
 				if(strstr(line, "0x")) {
 					LOGI("find crash addr: %s", line);
 					strcpy(soInfo.crashSoAddr[soInfo.crash_so_num - 1], line);
-					needGetAddr = false;
 				}
 			}
     		for(i = 0; i< soInfo.so_num; i++) {
@@ -38,6 +40,7 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
     				strcpy(soInfo.crashSoName[soInfo.crash_so_num], soInfo.checkSoName[i]);
     				soInfo.crash_so_num ++;
     				needGetAddr = true;
+    				break;//每一行只会出现一个so
     			}
     		}
     	}

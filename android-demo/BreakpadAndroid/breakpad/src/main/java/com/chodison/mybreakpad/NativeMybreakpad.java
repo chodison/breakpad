@@ -72,6 +72,18 @@ public class NativeMybreakpad {
     }
     private static native String[] nativeGetCrashSoName();
 
+    /**
+     * 获取解析后崩溃的so堆栈地址
+     * @return
+     */
+    public static String[] getCrashSoAddr() {
+        if (loadBreakpadSuccess) {
+            return  nativeGetCrashSoAddr();
+        }
+        return null;
+    }
+    private static native String[] nativeGetCrashSoAddr();
+
     public static int testNativeCrash(){
         if (loadBreakpadSuccess){
             Log.d(TAG, "test native crash .......................");

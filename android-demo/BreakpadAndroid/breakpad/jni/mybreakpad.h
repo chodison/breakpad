@@ -21,6 +21,7 @@ struct ProcessorSoInfo{
 	char checkSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
 	char crashSoIndex[MAX_SO_NUM];
 	char crashSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
+	char crashSoAddr[MAX_SO_NUM][MAX_SO_NAME_LEN];
 	int  so_num;
 	int crash_so_num;
 };

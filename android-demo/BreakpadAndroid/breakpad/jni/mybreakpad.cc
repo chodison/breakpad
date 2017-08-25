@@ -9,6 +9,7 @@
 #define MAX_LOGTEXT_LEN (2048)          /* 每行日志的最大长度*/
 
 static bool needCheck = false;
+static bool needGetAddr = false;
 static ProcessorSoInfo soInfo;
 FILE *pFile = NULL;
 
@@ -23,12 +24,20 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
     		needCheck = false;
     	if(needCheck && soInfo.so_num > 0) {
     		int i = 0;
+    		if(needGetAddr) {
+				if(strstr(line, "0x")) {
+					LOGI("find crash addr: %s", line);
+					strcpy(soInfo.crashSoAddr[soInfo.crash_so_num - 1], line);
+					needGetAddr = false;
+				}
+			}
     		for(i = 0; i< soInfo.so_num; i++) {
     			if(strstr(line, soInfo.checkSoName[i])) {
     				LOGI("find crash [%d]: %s", i, soInfo.checkSoName[i]);
     				soInfo.crashSoIndex[i] = 1;
     				strcpy(soInfo.crashSoName[soInfo.crash_so_num], soInfo.checkSoName[i]);
     				soInfo.crash_so_num ++;
+    				needGetAddr = true;
     			}
     		}
     	}

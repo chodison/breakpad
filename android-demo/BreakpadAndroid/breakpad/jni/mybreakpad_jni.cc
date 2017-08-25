@@ -83,6 +83,19 @@ JNIEXPORT jobjectArray JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nat
 	return row;
 }
 
+JNIEXPORT jobjectArray JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeGetCrashSoAddr(JNIEnv *env, jobject obj)
+{
+	ProcessorSoInfo mSoInfo_ = MyBreakpad::getInstance()->getProcessorSoInfo();
+	jclass stringClass = env->FindClass("java/lang/String");
+	jobjectArray row = env->NewObjectArray(mSoInfo_.crash_so_num, stringClass, 0);
+	jsize i;
+	for (i = 0; i < mSoInfo_.crash_so_num; i ++)
+	{
+		env->SetObjectArrayElement(row, i, env->NewStringUTF(mSoInfo_.crashSoAddr[i]));
+	}
+	return row;
+}
+
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeTestCrash(JNIEnv *env, jobject obj)
 {
 	char *ptr = NULL;

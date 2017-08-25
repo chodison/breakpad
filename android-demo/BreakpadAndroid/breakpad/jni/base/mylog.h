@@ -1,5 +1,7 @@
 #ifndef __MY_LOG_H__
 #define __MY_LOG_H__
+
+#ifdef __ANDROID__
 #include <jni.h>
 #include <android/log.h>
 
@@ -7,7 +9,7 @@
 #define DEBUG 1
 #endif
 
-#define MYLOG_MODULE_NAME "cn.chodison.mybreakpad"
+#define MYLOG_MODULE_NAME "com.chodison.mybreakpad"
 
 #ifdef DEBUG
 	#define LOGV(...) __android_log_print(ANDROID_LOG_VERBOSE, MYLOG_MODULE_NAME, __VA_ARGS__)
@@ -25,6 +27,18 @@
 
 #define VLOG(level, TAG, ...)    ((void)__android_log_vprint(level, TAG, __VA_ARGS__))
 #define ALOG(level, TAG, ...)    ((void)__android_log_print(level, TAG, __VA_ARGS__))
+
+#else
+
+#define LOGV(...) ((void)printf(__VA_ARGS__))
+#define LOGD(...) ((void)printf(__VA_ARGS__))
+#define LOGI(...) ((void)printf(__VA_ARGS__))
+#define LOGW(...) ((void)printf(__VA_ARGS__))
+#define LOGE(...) ((void)printf(__VA_ARGS__))
+
+#define VLOG(level, TAG, ...)    ((void)vprintf(__VA_ARGS__))
+#define ALOG(level, TAG, ...)    ((void)printf(__VA_ARGS__))
+#endif
 
 static int report_log(int alog_level, const char* alog_text) {
 	ALOG(alog_level, MYLOG_MODULE_NAME, "%s", alog_text);

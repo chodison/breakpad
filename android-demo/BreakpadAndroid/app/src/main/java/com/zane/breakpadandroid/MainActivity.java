@@ -101,8 +101,10 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "processed: " + aBoolean);
                         if(aBoolean) {
                             String[] crashSoName = NativeMybreakpad.getCrashSoName();
+                            String[] crashSoAddr = NativeMybreakpad.getCrashSoAddr();
                             for(int i = 0; i < crashSoName.length; i ++) {
                                 Log.e(TAG, "crash so name["+i+"]: " + crashSoName[i].toString());
+                                Log.e(TAG, "crash so text["+i+"]: " + crashSoAddr[i].toString());
                             }
                         }
                     }

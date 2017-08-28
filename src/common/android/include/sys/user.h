@@ -60,7 +60,7 @@ typedef struct user_fxsr_struct user_fpxregs_struct;
 #endif  // __cplusplus
 #endif  // __i386__
 
-#if !defined(ANDROID_NDK_MAJOR_VERSION) || ANDROID_NDK_MAJOR_VERSION == 10
+#if defined(ANDROID_NDK_MAJOR_VERSION) && ANDROID_NDK_MAJOR_VERSION > 10
 #ifdef __aarch64__
 #ifdef __cplusplus
 extern "C" {
@@ -80,6 +80,6 @@ struct user_fpsimd_struct {
 }  // extern "C"
 #endif  // __cplusplus
 #endif  // __aarch64__
-#endif  // defined(ANDROID_NDK_VERSION) && ANDROID_NDK_MAJOR_VERSION == 10
+#endif  // #if defined(ANDROID_NDK_MAJOR_VERSION) && ANDROID_NDK_MAJOR_VERSION > 10
 
 #endif  // GOOGLE_BREAKPAD_COMMON_ANDROID_INCLUDE_SYS_USER_H

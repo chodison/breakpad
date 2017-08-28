@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .dmp 是后缀名
                         String dumpPath = file.getAbsolutePath();
-                        String crashFileName = DUMP_DIR + "/crash.txt";
+                        String crashFileName = DUMP_DIR + "/" + fileName+ "crash.txt";
 //                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
                         boolean exec = NativeMybreakpad.dumpFileProcess(dumpPath, crashFileName, app_so);
 //                        if (exec) { // 解析完成之后 删除 dmp 文件

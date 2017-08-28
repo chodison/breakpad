@@ -45,12 +45,8 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
     		}
     	}
 
-		if(pFile)
-		{
-			fflush(pFile);
-			fclose(pFile);
-		}
-		pFile = fopen(soInfo.szFileName, "ab+");
+        if(pFile == NULL)
+		    pFile = fopen(soInfo.szFileName, "ab+");
 		if(pFile)
 			fwrite(line, 1, strlen(line), pFile);
     }
@@ -80,6 +76,7 @@ bool MyBreakpad::processDumpFile(const char* dump_path) {
 	{
 		fflush(pFile);
 		fclose(pFile);
+        pFile = NULL;
 	}
 	return  ret;
 }

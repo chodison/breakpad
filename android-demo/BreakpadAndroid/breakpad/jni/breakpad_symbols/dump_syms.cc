@@ -52,7 +52,7 @@ int usage(const char* self) {
   return 1;
 }
 
-int main_jni(int argc, char **argv) {
+int main_symbols_jni(int argc, char **argv) {
   if (argc < 2)
     return usage(argv[0]);
   bool header_only = false;

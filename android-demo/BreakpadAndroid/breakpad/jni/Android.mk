@@ -11,13 +11,15 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := mybreakpad
 LOCAL_SRC_FILES :=  \
 					minidump_processor.cc \
-					mybreakpad.cc \
 					mybreakpad_jni.cc
 					
 LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \
                            $(MY_APP_JNI_ROOT)/src \
                            $(MY_APP_JNI_ROOT)
 LOCAL_LDLIBS := -llog -latomic
+
+LOCAL_CFLAGS :=
+#LOCAL_CFLAGS += -DLOGDEBUG
 
 LOCAL_SHARED_LIBRARIES := 
 LOCAL_STATIC_LIBRARIES := breakpad_processor breakpad_client

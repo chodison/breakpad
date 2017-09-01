@@ -12,6 +12,9 @@ android {
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
+        ndk {
+            abiFilters "armeabi"//编译支持的平台
+        }
     }
     buildTypes {
         release {
@@ -23,6 +26,11 @@ android {
         main {
             java.srcDirs = ['src/main/java']
             jniLibs.srcDirs = ['libs']
+        }
+    }
+    externalNativeBuild {
+        ndkBuild {
+            path 'jni/Android.mk'
         }
     }
 }

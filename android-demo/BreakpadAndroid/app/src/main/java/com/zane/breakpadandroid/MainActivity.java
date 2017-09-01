@@ -10,6 +10,7 @@ import com.chodison.mybreakpad.DumpProcessor;
 import com.chodison.mybreakpad.DumpSymbols;
 import com.chodison.mybreakpad.ExceptionHandler;
 import com.chodison.mybreakpad.NativeMybreakpad;
+import com.chodison.mybreakpad.NativeCrashInfo;
 
 import java.io.File;
 
@@ -84,12 +85,26 @@ public class MainActivity extends AppCompatActivity {
                         String dumpPath = file.getAbsolutePath();
                         String crashFileName = DUMP_DIR + "/" + fileName+ "crash.txt";
 //                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
-                        boolean exec = NativeMybreakpad.dumpFileProcess(dumpPath, crashFileName, app_so);
 //                        if (exec) { // 解析完成之后 删除 dmp 文件
 //                            boolean isDelete = file.delete();
 //                            Log.e(TAG, "isDelete: " + isDelete);
 //                        }
-                        e.onNext(exec);
+
+                        Log.e("chodison", "crash processed begin,dumpPath: " + dumpPath);
+                        NativeCrashInfo crashInfo = NativeMybreakpad.dumpFileProcessinfo(dumpPath, crashFileName, app_so);
+//                        NativeCrashInfo crashInfo = NativeMybreakpad.dumpFileProcessinfo(dumpPath, app_so);
+                        if(crashInfo != null){
+                            String[] crashSoName = crashInfo.crashSoName;
+                            String[] crashSoAddr = crashInfo.crashSoAddr;
+                            Log.e("chodison", "first crash so name: " + crashInfo.firstCrashSoName.toString());
+                            for (int i = 0; i < crashSoName.length; i++) {
+                                Log.e("chodison", "crash so name[" + i + "]: " + crashSoName[i].toString());
+                                Log.e("chodison", "crash so text[" + i + "]: " + crashSoAddr[i].toString());
+                            }
+                            Log.e("chodison", "crash processed success");
+                        } else {
+                            Log.e("chodison", "crash processed failed");
+                        }
                     }
                 }
             }
@@ -98,15 +113,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Consumer<Boolean>() {
                     @Override
                     public void accept(Boolean aBoolean) throws Exception {
-                        Log.e(TAG, "processed: " + aBoolean);
-                        if(aBoolean) {
-                            String[] crashSoName = NativeMybreakpad.getCrashSoName();
-                            String[] crashSoAddr = NativeMybreakpad.getCrashSoAddr();
-                            for(int i = 0; i < crashSoName.length; i ++) {
-                                Log.e(TAG, "crash so name["+i+"]: " + crashSoName[i].toString());
-                                Log.e(TAG, "crash so text["+i+"]: " + crashSoAddr[i].toString());
-                            }
-                        }
+
                     }
                 });
     }

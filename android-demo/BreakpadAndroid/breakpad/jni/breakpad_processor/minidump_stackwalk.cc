@@ -48,8 +48,6 @@
 #include "processor/logging.h"
 #include "processor/simple_symbol_supplier.h"
 #include "processor/stackwalk_common.h"
-#include "minidump_stackwalk.h"
-#include "base/mylog.h"
 
 namespace {
 
@@ -119,12 +117,12 @@ void usage(const char *program_name) {
 
 }  // namespace
 
-int main_jni(int argc, char **argv) {
+int main_minidump_jni(int argc, char **argv) {
   BPLOG_INIT(&argc, &argv);
 
   if (argc < 2) {
     usage(argv[0]);
-    BPLOG(ERROR) << "main_jni() argc < 2 failed";
+    BPLOG(ERROR) << "main_minidump_jni() argc < 2 failed";
     return 1;
   }
 
@@ -136,7 +134,7 @@ int main_jni(int argc, char **argv) {
   if (strcmp(argv[1], "-m") == 0) {
     if (argc < 3) {
       usage(argv[0]);
-      BPLOG(ERROR) << "main_jni() -m argc < 3 failed";
+      BPLOG(ERROR) << "main_minidump_jni() -m argc < 3 failed";
       return 1;
     }
 
@@ -146,7 +144,7 @@ int main_jni(int argc, char **argv) {
   } else if (strcmp(argv[1], "-s") == 0) {
     if (argc < 3) {
       usage(argv[0]);
-      BPLOG(ERROR) << "main_jni() -s argc < 3 failed";
+      BPLOG(ERROR) << "main_minidump_jni() -s argc < 3 failed";
       return 1;
     }
 

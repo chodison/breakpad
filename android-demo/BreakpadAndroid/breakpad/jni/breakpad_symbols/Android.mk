@@ -83,9 +83,7 @@ LOCAL_SRC_FILES 	+=\
 	$(MY_APP_JNI_ROOT)/src/common/dwarf/elf_reader.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/crc32.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/dump_symbols.cc \
-	$(MY_APP_JNI_ROOT)/src/common/linux/dump_symbols.h \
 	$(MY_APP_JNI_ROOT)/src/common/linux/elf_symbols_to_module.cc \
-	$(MY_APP_JNI_ROOT)/src/common/linux/elf_symbols_to_module.h \
 	$(MY_APP_JNI_ROOT)/src/common/linux/elfutils.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/file_id.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/linux_libc_support.cc \

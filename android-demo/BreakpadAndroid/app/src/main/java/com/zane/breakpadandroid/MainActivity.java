@@ -6,9 +6,6 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import com.chodison.mybreakpad.DumpProcessor;
-import com.chodison.mybreakpad.DumpSymbols;
-import com.chodison.mybreakpad.ExceptionHandler;
 import com.chodison.mybreakpad.NativeMybreakpad;
 import com.chodison.mybreakpad.NativeCrashInfo;
 
@@ -96,10 +93,14 @@ public class MainActivity extends AppCompatActivity {
                         if(crashInfo != null){
                             String[] crashSoName = crashInfo.crashSoName;
                             String[] crashSoAddr = crashInfo.crashSoAddr;
+                            int existAppSo = crashInfo.exist_app_so;
+                            Log.e("chodison", "exist app so crash: " + crashInfo.firstCrashSoName.toString());
                             Log.e("chodison", "first crash so name: " + crashInfo.firstCrashSoName.toString());
-                            for (int i = 0; i < crashSoName.length; i++) {
-                                Log.e("chodison", "crash so name[" + i + "]: " + crashSoName[i].toString());
-                                Log.e("chodison", "crash so text[" + i + "]: " + crashSoAddr[i].toString());
+                            if(existAppSo == 1) {
+                                for (int i = 0; i < crashSoName.length; i++) {
+                                    Log.e("chodison", "crash so name[" + i + "]: " + crashSoName[i].toString());
+                                    Log.e("chodison", "crash so text[" + i + "]: " + crashSoAddr[i].toString());
+                                }
                             }
                             Log.e("chodison", "crash processed success");
                         } else {
@@ -135,8 +136,8 @@ public class MainActivity extends AppCompatActivity {
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .so 是后缀名
                         String dumpPath = file.getAbsolutePath();
                         String symFileName = DUMP_DIR +"/" + fileName+".sym";
-                        boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
-                        e.onNext(exec);
+//                        boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
+//                        e.onNext(exec);
                     }
                 }
             }

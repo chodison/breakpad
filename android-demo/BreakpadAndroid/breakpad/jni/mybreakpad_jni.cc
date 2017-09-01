@@ -166,7 +166,9 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
     jfieldID crashSoName_fid = env->GetFieldID(crashInfo, "crashSoName", "[Ljava/lang/String;");
     jfieldID crashSoAddr_fid = env->GetFieldID(crashInfo, "crashSoAddr", "[Ljava/lang/String;");
     jfieldID firstSoName_fid = env->GetFieldID(crashInfo, "firstCrashSoName", "Ljava/lang/String;");
-    if(crashSoName_fid == NULL || crashSoAddr_fid == NULL || firstSoName_fid == NULL) {
+    jfieldID existAppSo_fid = env->GetFieldID(crashInfo, "exist_app_so", "I");
+    if(crashSoName_fid == NULL || crashSoAddr_fid == NULL
+    || firstSoName_fid == NULL || existAppSo_fid == NULL) {
         LOGE("Process ===> NativeCrashInfo GetFieldID failed");
         return NULL;
     }
@@ -223,9 +225,12 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
                 env->SetObjectArrayElement(soname, i, env->NewStringUTF(mSoInfo.crashSoName[i]));
                 env->SetObjectArrayElement(soaddr, i, env->NewStringUTF(mSoInfo.crashSoAddr[i]));
             }
-
             env->SetObjectField(crashInfoObj, crashSoName_fid, soname);
             env->SetObjectField(crashInfoObj, crashSoAddr_fid, soaddr);
+
+            env->SetIntField(crashInfoObj, existAppSo_fid, 1);
+        } else {
+            env->SetIntField(crashInfoObj, existAppSo_fid, 0);
         }
 
         if(strlen(mSoInfo.firstCrashSoName) > 0) {

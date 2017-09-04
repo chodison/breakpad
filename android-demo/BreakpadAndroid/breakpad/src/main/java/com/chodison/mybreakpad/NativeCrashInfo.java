@@ -9,7 +9,7 @@ public class NativeCrashInfo {
     public String[] crashSoName;
     //崩溃的SO对应的堆栈地址
     public String[] crashSoAddr;
-    //设置下来的SO在dump解析文件里能找到
+    //设置下来的SO在dump解析文件里能找到, 1:代表能找到
     public int exist_app_so;
     //记录第一个崩溃的SO名字，当exist_app_so为0的话说明其他so崩溃了
     public String firstCrashSoName;

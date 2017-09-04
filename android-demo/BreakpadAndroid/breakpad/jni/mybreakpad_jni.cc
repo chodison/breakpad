@@ -1,3 +1,4 @@
+#include <pthread.h>
 #include "mybreakpad_jni.h"
 
 #include "src/client/linux/handler/exception_handler.h"
@@ -28,6 +29,7 @@ JavaVM *mJVM = NULL;
 static volatile bool needCheck = false;
 static volatile bool needGetAddr = false;
 static ProcessorSoInfo mSoInfo;
+static pthread_mutex_t mutex;
 FILE *pFile = NULL;
 
 static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list vl)
@@ -121,10 +123,16 @@ bool DumpCallback(const google_breakpad::MinidumpDescriptor& descriptor, void* c
     return succeeded;
 }
 
-jint JNI_OnLoad(JavaVM *vm, void* /*reserved*/) {
+JNIEXPORT jint JNI_OnLoad(JavaVM *vm, void* /*reserved*/) {
     LOGI("JNI_OnLoad");
     mJVM = vm;
+    pthread_mutex_init(&mutex, NULL);
     return JNI_VERSION_1_4;
+}
+
+JNIEXPORT void JNICALL JNI_OnUnload(JavaVM* vm, void* reserved) {
+    LOGI("JNI_OnUnload");
+    pthread_mutex_destroy(&mutex);
 }
 
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir)
@@ -145,6 +153,8 @@ JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(
 
 JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDumpProcess(JNIEnv *env, jobject obj,
               jstring dump_file_jst, jstring processed_path_jst, jobjectArray check_sos) {
+
+    pthread_mutex_lock(&mutex);
     int i;
 
     //初始化需要返回的jobject
@@ -238,6 +248,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
             env->SetObjectField(crashInfoObj, firstSoName_fid, firstSoName_jst);
         }
     }
+    pthread_mutex_unlock(&mutex);
 
     return crashInfoObj;
 }

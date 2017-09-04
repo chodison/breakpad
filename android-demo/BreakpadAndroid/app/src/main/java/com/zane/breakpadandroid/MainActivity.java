@@ -1,14 +1,11 @@
 package com.zane.breakpadandroid;
 
-import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
-import com.chodison.mybreakpad.DumpProcessor;
 import com.chodison.mybreakpad.DumpSymbols;
-import com.chodison.mybreakpad.ExceptionHandler;
 import com.chodison.mybreakpad.NativeMybreakpad;
 
 import java.io.File;
@@ -16,10 +13,8 @@ import java.io.File;
 import io.reactivex.Observable;
 import io.reactivex.ObservableEmitter;
 import io.reactivex.ObservableOnSubscribe;
-import io.reactivex.Observer;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.annotations.NonNull;
-import io.reactivex.disposables.Disposable;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
 
@@ -35,9 +30,11 @@ import io.reactivex.schedulers.Schedulers;
  */
 public class MainActivity extends AppCompatActivity {
 
-    private static final String SDCARD_DIR = Environment.getExternalStorageDirectory().getAbsolutePath();
-    private static final String DUMP_DIR = SDCARD_DIR +"/dumps";
     private static final String TAG = MainActivity.class.getSimpleName();
+
+    private static File externalFile;
+    private String dumpDir;
+
     private static final String[] app_so = {"libtest1.so","libmybreakpad.so","libtest2.so"};
 
     @Override
@@ -45,16 +42,19 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        checkDir();
-//        ExceptionHandler.init(DUMP_DIR);
-        NativeMybreakpad.init(DUMP_DIR);
+        externalFile = this.getExternalFilesDir(null);
+        Log.e(TAG, "externalFile: " + externalFile);
+        if (externalFile != null && externalFile.exists()) {
+            dumpDir = externalFile.getPath() +"/dumps";
+            checkDir();
+            NativeMybreakpad.init(dumpDir);
+        }
     }
 
     public void doClick(View view){
         int id = view.getId();
         switch (id){
             case R.id.bt_crash:
-//                ExceptionHandler.testNativeCrash();
                 NativeMybreakpad.testNativeCrash();
                 break;
             case R.id.bt_processor:
@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
         Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
-                File dir = new File(DUMP_DIR);
+                File dir = new File(dumpDir);
                 File[] files = dir.listFiles();
                 for (File file : files) {
                     String fileName = file.getName();
@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .dmp 是后缀名
                         String dumpPath = file.getAbsolutePath();
-                        String crashFileName = DUMP_DIR + "/" + fileName+ "crash.txt";
+                        String crashFileName = dumpDir + "/" + fileName+ "crash.txt";
 //                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
                         boolean exec = NativeMybreakpad.dumpFileProcess(dumpPath, crashFileName, app_so);
 //                        if (exec) { // 解析完成之后 删除 dmp 文件
@@ -118,7 +118,7 @@ public class MainActivity extends AppCompatActivity {
         Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
-                File dir = new File(DUMP_DIR);
+                File dir = new File(dumpDir);
                 File[] files = dir.listFiles();
                 for (File file : files) {
                     String fileName = file.getName();
@@ -127,7 +127,7 @@ public class MainActivity extends AppCompatActivity {
 
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .so 是后缀名
                         String dumpPath = file.getAbsolutePath();
-                        String symFileName = DUMP_DIR +"/" + fileName+".sym";
+                        String symFileName = dumpDir +"/" + fileName+".sym";
                         boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
                         e.onNext(exec);
                     }
@@ -151,12 +151,15 @@ public class MainActivity extends AppCompatActivity {
         Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
             public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
-                File sdCardDir = new File(SDCARD_DIR);
-                if (!sdCardDir.exists()) {
+                if (externalFile == null) {
                     e.onNext(false);
                     return;
                 }
-                File dir = new File(DUMP_DIR);
+                if (!externalFile.exists()) {
+                    e.onNext(false);
+                    return;
+                }
+                File dir = new File(dumpDir);
                 if (dir.exists() && dir.isDirectory()){
                     e.onNext(true);
                     return;

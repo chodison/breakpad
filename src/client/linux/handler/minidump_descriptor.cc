@@ -28,6 +28,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdio.h>
+#include <cstdlib>
 
 #include "client/linux/handler/minidump_descriptor.h"
 
@@ -89,8 +90,22 @@ void MinidumpDescriptor::UpdatePath() {
     assert(false);
   }
 
+  char time_string[20];
+  time_t clock;
+  time(&clock);
+  struct tm tm_struct;
+#ifdef _WIN32
+  localtime_s(&tm_struct, &clock);
+#else
+  localtime_r(&clock, &tm_struct);
+#endif
+  strftime(time_string, sizeof(time_string), "%Y-%m-%d-%H-%M-%S", &tm_struct);
+
+    srand((unsigned)time(NULL));
+    char str[25];
+    snprintf(str,25,"-r%d",rand());
   path_.clear();
-  path_ = directory_ + "/" + guid_str + ".dmp";
+  path_ = directory_ + "/" + time_string + str + ".dmp";
   c_path_ = path_.c_str();
 }
 

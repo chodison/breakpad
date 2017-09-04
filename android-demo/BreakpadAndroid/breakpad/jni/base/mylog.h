@@ -41,7 +41,7 @@
 #endif
 
 static int report_log(int alog_level, const char* alog_text) {
-	ALOG(alog_level, MYLOG_MODULE_NAME, "%s", alog_text);
+//	ALOG(alog_level, MYLOG_MODULE_NAME, "%s", alog_text);
 	return 0;
 }
 

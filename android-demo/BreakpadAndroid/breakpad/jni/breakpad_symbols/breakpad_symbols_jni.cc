@@ -2,7 +2,7 @@
 #include "processor/logging.h"
 #include "base/mylog.h"
 
-int main_jni(int argc, char **argv);
+int main_symbols_jni(int argc, char **argv);
 
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpSymbols_nativeExec(JNIEnv *env, jobject obj, jobjectArray commands)
 {
@@ -18,7 +18,7 @@ JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpSymbols_nativeExec(JNIEn
         LOGI("Exec ===> argv[%d] %s", i, argv[i]);
     }
 
-    int ret = main_jni(argc, argv);
+    int ret = main_symbols_jni(argc, argv);
 
 	return ret;
 }

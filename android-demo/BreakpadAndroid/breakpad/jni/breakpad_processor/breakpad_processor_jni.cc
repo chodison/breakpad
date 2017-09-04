@@ -1,7 +1,5 @@
 #include "breakpad_processor_jni.h"
-#include "minidump_stackwalk.h"
 #include "processor/logging.h"
-#include "base/mylog.h"
 
 #define MAX_LOGTEXT_LEN (2048)         /* 每行日志的最大长度*/
 #define MAX_LOG_FILE_NAME_LEN (2048)    /* 日志文件名的最大长度*/
@@ -44,6 +42,7 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
     VLOG(ANDROID_LOG_INFO, MYLOG_MODULE_NAME, fmt, vl);
 }
 
+int main_minidump_jni(int argc, char **argv);
 JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpProcessor_nativeExec(JNIEnv *env, jobject obj,
 		jobjectArray commands, jstring printf_path_js, jobjectArray check_sos)
 {
@@ -79,7 +78,7 @@ JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_DumpProcessor_nativeExec(JNI
     breakpad_log_set_callback(breakpad_log_callback);
 
     needCheck = true;
-    int ret = main_jni(argc, argv);
+    int ret = main_minidump_jni(argc, argv);
 
     for (i = 0; i < so_num; i++) {
     	if(crashSoFileNameIndex[i])

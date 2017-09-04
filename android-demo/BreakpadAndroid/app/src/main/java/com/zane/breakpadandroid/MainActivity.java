@@ -5,8 +5,12 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+<<<<<<< HEAD
 import com.chodison.mybreakpad.DumpSymbols;
+=======
+>>>>>>> 1976dd32d9d18ad31cc4b6770899f1d9dd76bdd6
 import com.chodison.mybreakpad.NativeMybreakpad;
+import com.chodison.mybreakpad.NativeCrashInfo;
 
 import java.io.File;
 
@@ -84,12 +88,30 @@ public class MainActivity extends AppCompatActivity {
                         String dumpPath = file.getAbsolutePath();
                         String crashFileName = dumpDir + "/" + fileName+ "crash.txt";
 //                        boolean exec = DumpProcessor.exec(new String[]{"minidump_stackwalk", dumpPath}, crashFileName);
-                        boolean exec = NativeMybreakpad.dumpFileProcess(dumpPath, crashFileName, app_so);
 //                        if (exec) { // 解析完成之后 删除 dmp 文件
 //                            boolean isDelete = file.delete();
 //                            Log.e(TAG, "isDelete: " + isDelete);
 //                        }
-                        e.onNext(exec);
+
+                        Log.e("chodison", "crash processed begin,dumpPath: " + dumpPath);
+                        NativeCrashInfo crashInfo = NativeMybreakpad.dumpFileProcessinfo(dumpPath, crashFileName, app_so);
+//                        NativeCrashInfo crashInfo = NativeMybreakpad.dumpFileProcessinfo(dumpPath, app_so);
+                        if(crashInfo != null){
+                            String[] crashSoName = crashInfo.crashSoName;
+                            String[] crashSoAddr = crashInfo.crashSoAddr;
+                            int existAppSo = crashInfo.exist_app_so;
+                            Log.e("chodison", "exist app so crash: " + crashInfo.firstCrashSoName.toString());
+                            Log.e("chodison", "first crash so name: " + crashInfo.firstCrashSoName.toString());
+                            if(existAppSo == 1) {
+                                for (int i = 0; i < crashSoName.length; i++) {
+                                    Log.e("chodison", "crash so name[" + i + "]: " + crashSoName[i].toString());
+                                    Log.e("chodison", "crash so text[" + i + "]: " + crashSoAddr[i].toString());
+                                }
+                            }
+                            Log.e("chodison", "crash processed success");
+                        } else {
+                            Log.e("chodison", "crash processed failed");
+                        }
                     }
                 }
             }
@@ -98,15 +120,7 @@ public class MainActivity extends AppCompatActivity {
                 .subscribe(new Consumer<Boolean>() {
                     @Override
                     public void accept(Boolean aBoolean) throws Exception {
-                        Log.e(TAG, "processed: " + aBoolean);
-                        if(aBoolean) {
-                            String[] crashSoName = NativeMybreakpad.getCrashSoName();
-                            String[] crashSoAddr = NativeMybreakpad.getCrashSoAddr();
-                            for(int i = 0; i < crashSoName.length; i ++) {
-                                Log.e(TAG, "crash so name["+i+"]: " + crashSoName[i].toString());
-                                Log.e(TAG, "crash so text["+i+"]: " + crashSoAddr[i].toString());
-                            }
-                        }
+
                     }
                 });
     }
@@ -127,9 +141,9 @@ public class MainActivity extends AppCompatActivity {
 
                     if (lastIndexOf + lastName.length() == fileName.length()) { // 说明 .so 是后缀名
                         String dumpPath = file.getAbsolutePath();
-                        String symFileName = dumpDir +"/" + fileName+".sym";
-                        boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
-                        e.onNext(exec);
+                        String symFileName = DUMP_DIR +"/" + fileName+".sym";
+//                        boolean exec = DumpSymbols.exec(new String[]{"./dump_syms", dumpPath, symFileName});
+//                        e.onNext(exec);
                     }
                 }
             }

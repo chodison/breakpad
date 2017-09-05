@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity {
     private void doProcess() {
         Observable.create(new ObservableOnSubscribe<Boolean>() {
             @Override
-            public void subscribe(@NonNull ObservableEmitter<Boolean> e) throws Exception {
+            public void subscribe(@NonNull ObservableEmitter<Boolean> e) {
                 File dir = new File(dumpDir);
                 File[] files = dir.listFiles();
                 for (File file : files) {
@@ -105,7 +105,14 @@ public class MainActivity extends AppCompatActivity {
                     }
                 }
             }
-        });
+        }).subscribeOn(Schedulers.newThread())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+
+                    }
+                });
     }
 
     /**

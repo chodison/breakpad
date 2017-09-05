@@ -16,10 +16,10 @@ public class NativeMybreakpad {
     /**
      * 初始化返回类型
      */
-    private final static int TYPE_INIT_SUCCESS = 0;
-    private final static int TYPE_INIT_FAILED = 1;
-    private final static int TYPE_INIT_LOADSO_FAIL = 2;
-    private final static int TYPE_INIT_DUMPDIR_NULL = 3;
+    public final static int TYPE_INIT_SUCCESS = 0;
+    public final static int TYPE_INIT_FAILED = 1;
+    public final static int TYPE_INIT_LOADSO_FAIL = 2;
+    public final static int TYPE_INIT_DUMPDIR_NULL = 3;
 
     private static String mLoadSoFailMsg = "";
 

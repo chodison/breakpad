@@ -49,7 +49,7 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
                 needGetAddr = false;
                 if(strstr(line, "0x")) {
                     LOGI("find crash addr: %s", line);
-                    strcpy(mSoInfo.crashSoAddr[mSoInfo.crash_so_num - 1], line);
+                    strcpy(mSoInfo.crashSoAddr[mSoInfo.crash_so_num - 1], strstr(line, "0x"));
                 }
             }
             if(strlen(mSoInfo.firstCrashSoName) < 1 && strstr(line, ".so")) {

@@ -26,7 +26,12 @@ struct ProcessorSoInfo{
 static google_breakpad::ExceptionHandler* mExceptionHandler;
 JavaVM *mJVM = NULL;
 
-static volatile bool needCheck = false;
+#define STATUS_IDLE  0
+#define STATUS_INIT  1
+#define STATUS_BEGIN  2
+#define STATUS_END  3
+
+static volatile int needCheckStatus = STATUS_IDLE;
 static volatile bool needGetAddr = false;
 static ProcessorSoInfo mSoInfo;
 static pthread_mutex_t mutex;
@@ -39,10 +44,15 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 
     if(vsnprintf(line, sizeof(line) - 1, fmt, vl) >= 0)
     {
-        if(strstr(line, "Loaded modules"))
-            needCheck = false;
+        //if(strstr(line, "Loaded modules"))
+        //只需找第一个Thread即可
+        if(needCheckStatus == STATUS_BEGIN && (strstr(line, "Thread") || strstr(line, "Loaded modules")))
+            needCheckStatus = STATUS_END;
+        if(needCheckStatus == STATUS_INIT && strstr(line, "Thread") && strstr(line, "crashed"))
+            needCheckStatus = STATUS_BEGIN;
+
         //检查每一行
-        if(needCheck && mSoInfo.so_num > 0) {
+        if(needCheckStatus == STATUS_BEGIN && mSoInfo.so_num > 0) {
             int i = 0;
             //当出现崩溃的so后紧接着下一行将是堆栈地址，没有就跳过
             if(needGetAddr) {
@@ -82,7 +92,7 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 bool processDumpFile(const char* dump_path) {
     std::vector<string> symbol_paths;
     bool ret = false;
-    needCheck = true;
+    needCheckStatus = STATUS_INIT;
     needGetAddr = false;
     ret = MinidumpProcessExport(dump_path, symbol_paths, false, true);
     if(pFile)

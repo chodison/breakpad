@@ -47,7 +47,7 @@ public class MainActivity extends AppCompatActivity {
         if (externalFile != null && externalFile.exists()) {
             dumpDir = externalFile.getPath() +"/dumps";
             checkDir();
-            NativeMybreakpad.init(dumpDir);
+            NativeMybreakpad.init(getApplicationContext(),dumpDir);
         }
     }
 

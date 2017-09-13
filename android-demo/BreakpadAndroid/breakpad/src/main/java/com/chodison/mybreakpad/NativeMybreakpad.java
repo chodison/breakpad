@@ -16,12 +16,16 @@
 package com.chodison.mybreakpad;
 
 import android.content.Context;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.Message;
 import android.text.TextUtils;
-import android.util.Log;
-
 import com.chodison.mybreakpad.helper.ABuildHelper;
 import com.chodison.mybreakpad.progma.BreakpadConfig;
 import com.chodison.mybreakpad.progma.DebugLog;
+import com.chodison.mybreakpad.NativeMyBreakpadListener.OnEventListener;
+
+import java.lang.ref.WeakReference;
 
 /**
  * Created by chodison on 2017/8/22.
@@ -30,6 +34,12 @@ import com.chodison.mybreakpad.progma.DebugLog;
 
 public class NativeMybreakpad {
     private static String TAG = "chodison java";
+
+    private static NativeMybreakpad mInstance;
+
+    private EventHandler mEventHandler;
+    private WeakReference<NativeMybreakpad> mWeakNativeMyBreakpad;
+    private OnEventListener mOnEventListener;
 
     /**
      * 初始化返回类型
@@ -45,18 +55,36 @@ public class NativeMybreakpad {
     public static NativeCrashInfo mNativeCrashInfo;
 
 
+    private static final int EVENT_WHAT_INIT = 100;
+    private static final int EVENT_WHAT_PROCESS = 200;
+
+
     private static volatile boolean mIsNativeInitialized = false;
-    private static void initNativeOnce() {
+    private void initNativeOnce() {
         synchronized (NativeMybreakpad.class) {
             if (!mIsNativeInitialized) {
-                //
+                Looper looper;
+                if ((looper = Looper.myLooper()) != null) {
+                    mEventHandler = new EventHandler(this, looper);
+                } else if ((looper = Looper.getMainLooper()) != null) {
+                    mEventHandler = new EventHandler(this, looper);
+                } else {
+                    mEventHandler = null;
+                }
+
+
+                mWeakNativeMyBreakpad = new WeakReference<NativeMybreakpad>(this);
+                nativeSetup(mWeakNativeMyBreakpad);
+
                 mIsNativeInitialized = true;
             }
         }
     }
 
+    private native final void nativeSetup(Object NativeMybreakpad_this);
+
     private static volatile boolean mIsLibLoaded = false;
-    public static void loadLibrariesOnce(Context context) throws UnsatisfiedLinkError, SecurityException, NullPointerException {
+    private static void loadLibrariesOnce(Context context) {
         synchronized (NativeMybreakpad.class) {
             if (!mIsLibLoaded) {
                 try {
@@ -127,9 +155,87 @@ public class NativeMybreakpad {
         }
     }
 
-    //native层调用，当发生崩溃时。
-    private static void onNativeCrash(int succeeded) {
-        DebugLog.e(TAG, "onNativeCrash callback:"+succeeded);
+    private static class EventHandler extends Handler {
+        private WeakReference<NativeMybreakpad> mWeakMyBreakpad;
+
+        public EventHandler(NativeMybreakpad mbr, Looper looper) {
+            super(looper);
+            mWeakMyBreakpad = new WeakReference<NativeMybreakpad>(mbr);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            NativeMybreakpad br = mWeakMyBreakpad.get();
+            if (br == null) {
+                DebugLog.e(TAG,
+                        "NativeMybreakpad went away with unhandled events");
+                return;
+            }
+
+            switch (msg.what) {
+                case EVENT_WHAT_INIT:
+                    DebugLog.e(TAG, "init event msg,arg1:"+msg.arg1);
+                    br.notifyOnInitEvent(msg.arg1, msg.arg2);
+                    return;
+
+                case EVENT_WHAT_PROCESS:
+                    DebugLog.e(TAG, "process event msg,arg1:"+msg.arg1);
+                    br.notifyOnProcessEvent(msg.arg1, msg.arg2);
+                    return;
+
+                default:
+                    DebugLog.e(TAG, "Unknown message type " + msg.what);
+                    return;
+            }
+        }
+    }
+
+    //native层调用，崩溃事件上报
+    private static void onNativeCrashEvent(Object weakThiz, int what,
+                                            int arg1, int arg2, Object obj) {
+        if (weakThiz == null)
+            return;
+
+        @SuppressWarnings("rawtypes")
+        NativeMybreakpad mbr = (NativeMybreakpad ) ((WeakReference) weakThiz).get();
+        if (mbr == null) {
+            return;
+        }
+
+        if (mbr.mEventHandler != null) {
+            Message m = mbr.mEventHandler.obtainMessage(what, arg1, arg2, obj);
+            mbr.mEventHandler.sendMessage(m);
+        }
+    }
+
+    private NativeMybreakpad() {
+    }
+
+    public static NativeMybreakpad getInstance() {
+        if(mInstance == null) {
+            synchronized (NativeMybreakpad.class) {
+                if(mInstance == null) {
+                    mInstance = new NativeMybreakpad();
+                }
+            }
+        }
+        return mInstance;
+    }
+
+    public void notifyOnInitEvent(int what, int arg1) {
+        if(mOnEventListener != null) {
+            mOnEventListener.onInitEvent(what, arg1);
+        }
+    }
+
+    public void notifyOnProcessEvent(int what, int arg1) {
+        if(mOnEventListener != null) {
+            mOnEventListener.onProcessEvent(what, arg1);
+        }
+    }
+
+    public void setOnEventListener(OnEventListener listener) {
+        mOnEventListener = listener;
     }
 
     public void setDebug(boolean enable) {
@@ -139,7 +245,7 @@ public class NativeMybreakpad {
      * 获取初始化的情况
      * @return
      */
-    public static String getInitedMsg() {
+    public String getInitedMsg() {
         return mLoadSoFailMsg;
     }
     /**
@@ -149,7 +255,7 @@ public class NativeMybreakpad {
      * @param dumpFileDir 崩溃发生时dump文件存储的目录
      * @return
      */
-    public static int init(Context context, String dumpFileDir) {
+    public int init(Context context, String dumpFileDir) {
         if(context == null) {
             return TYPE_INIT_CONTEXT_NULL;
         }
@@ -177,7 +283,7 @@ public class NativeMybreakpad {
      * @param check_sos 分析时需要匹配的SO
      * @return 成功时返回NativeCrashInfo，否则为空
      */
-    public static NativeCrashInfo dumpFileProcessinfo(String dump_file, String[] check_sos) {
+    public NativeCrashInfo dumpFileProcessinfo(String dump_file, String[] check_sos) {
         if (mIsLibLoaded) {
             mNativeCrashInfo = nativeDumpProcess(dump_file, null, check_sos);
             return mNativeCrashInfo;
@@ -193,7 +299,7 @@ public class NativeMybreakpad {
      * @param check_sos 分析时需要匹配的SO
      * @return 成功时返回NativeCrashInfo，否则为空
      */
-    public static NativeCrashInfo dumpFileProcessinfo(String dump_file, String processed_path, String[] check_sos) {
+    public NativeCrashInfo dumpFileProcessinfo(String dump_file, String processed_path, String[] check_sos) {
         if (mIsLibLoaded) {
             mNativeCrashInfo = nativeDumpProcess(dump_file, processed_path, check_sos);
             return mNativeCrashInfo;

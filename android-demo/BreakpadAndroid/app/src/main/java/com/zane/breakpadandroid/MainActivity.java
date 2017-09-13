@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 
+import com.chodison.mybreakpad.NativeMyBreakpadListener;
 import com.chodison.mybreakpad.NativeMybreakpad;
 import com.chodison.mybreakpad.NativeCrashInfo;
 
@@ -34,6 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static File externalFile;
     private String dumpDir;
+    private static NativeMybreakpad mNativeMybreakpad;
 
     private static final String[] app_so = {"libtest1.so","libmybreakpad.so","libtest2.so"};
 
@@ -43,11 +45,24 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         externalFile = this.getExternalFilesDir(null);
+        mNativeMybreakpad = NativeMybreakpad.getInstance();
+
+        mNativeMybreakpad.setOnEventListener(new NativeMyBreakpadListener.OnEventListener() {
+            @Override
+            public void onInitEvent(int what, int arg1) {
+                Log.e(TAG, "onInitEvent,what:"+what+",arg1:"+arg1);
+            }
+
+            @Override
+            public void onProcessEvent(int what, int arg1) {
+                Log.e(TAG, "onProcessEvent,what:"+what+",arg1:"+arg1);
+            }
+        });
         Log.e(TAG, "externalFile: " + externalFile);
         if (externalFile != null && externalFile.exists()) {
             dumpDir = externalFile.getPath() +"/dumps";
             checkDir();
-            NativeMybreakpad.init(getApplicationContext(),dumpDir);
+            mNativeMybreakpad.init(getApplicationContext(),dumpDir);
         }
     }
 
@@ -85,7 +100,7 @@ public class MainActivity extends AppCompatActivity {
                         String crashFileName = dumpDir + "/" + fileName+ "crash.txt";
 
                         Log.e(TAG, "crash processed begin,dumpPath: " + dumpPath);
-                        NativeCrashInfo crashInfo = NativeMybreakpad.dumpFileProcessinfo(dumpPath, crashFileName, app_so);
+                        NativeCrashInfo crashInfo = mNativeMybreakpad.dumpFileProcessinfo(dumpPath, crashFileName, app_so);
                         if(crashInfo != null){
                             String[] crashSoName = crashInfo.crashSoName;
                             String[] crashSoAddr = crashInfo.crashSoAddr;

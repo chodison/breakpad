@@ -24,6 +24,7 @@ import com.chodison.mybreakpad.helper.ABuildHelper;
 import com.chodison.mybreakpad.progma.BreakpadConfig;
 import com.chodison.mybreakpad.progma.DebugLog;
 import com.chodison.mybreakpad.NativeMyBreakpadListener.OnEventListener;
+import com.chodison.mybreakpad.NativeMyBreakpadListener.OnLogCallback;
 
 import java.lang.ref.WeakReference;
 
@@ -55,9 +56,22 @@ public class NativeMybreakpad {
     public static NativeCrashInfo mNativeCrashInfo;
 
 
-    private static final int EVENT_WHAT_INIT = 100;
-    private static final int EVENT_WHAT_PROCESS = 200;
+    public static final int EVENT_TYPE_INIT = 100;
+    public static final int EVENT_TYPE_PROCESS = 200;
 
+    public static final int EVENT_INIT_SUCCESS = 1000;
+    public static final int EVENT_INIT_FAILED = 1001;
+    public static final int EVENT_INIT_DUMPDIR_NULL = 1002;
+    public static final int EVENT_INIT_CONTEXT_NULL = 1003;
+    public static final int EVENT_INIT_LOADSO_FAIL = 1004;
+
+    public static final int EVENT_PROCESS_SUCCESS = 2000;
+    public static final int EVENT_PROCESS_FAILED = 2001;
+    public static final int EVENT_PROCESS_OBJFAIL_CLASS = 2002;
+    public static final int EVENT_PROCESS_OBJFAIL_METHOD_INIT = 200301;
+    public static final int EVENT_PROCESS_OBJFAIL_METHOD_NEWOBJ = 200302;
+    public static final int EVENT_PROCESS_OBJFAIL_METHOD_GETFEILD = 200303;
+    public static final int EVENT_PROCESS_DUMPFILE_NULL = 2004;
 
     private static volatile boolean mIsNativeInitialized = false;
     private void initNativeOnce() {
@@ -167,24 +181,24 @@ public class NativeMybreakpad {
         public void handleMessage(Message msg) {
             NativeMybreakpad br = mWeakMyBreakpad.get();
             if (br == null) {
-                DebugLog.e(TAG,
+                DebugLog.w(TAG,
                         "NativeMybreakpad went away with unhandled events");
                 return;
             }
 
             switch (msg.what) {
-                case EVENT_WHAT_INIT:
-                    DebugLog.e(TAG, "init event msg,arg1:"+msg.arg1);
+                case EVENT_TYPE_INIT:
+                    DebugLog.d(TAG, "init event msg,arg1:"+msg.arg1);
                     br.notifyOnInitEvent(msg.arg1, msg.arg2);
                     return;
 
-                case EVENT_WHAT_PROCESS:
-                    DebugLog.e(TAG, "process event msg,arg1:"+msg.arg1);
+                case EVENT_TYPE_PROCESS:
+                    DebugLog.d(TAG, "process event msg,arg1:"+msg.arg1);
                     br.notifyOnProcessEvent(msg.arg1, msg.arg2);
                     return;
 
                 default:
-                    DebugLog.e(TAG, "Unknown message type " + msg.what);
+                    DebugLog.w(TAG, "Unknown message type " + msg.what);
                     return;
             }
         }
@@ -209,6 +223,32 @@ public class NativeMybreakpad {
     }
 
     private NativeMybreakpad() {
+    }
+
+    private static OnLogCallback mOnLogCallback;
+
+    /**
+     * 设置日志回调
+     * @param callback
+     */
+    public static void setOnLogCallback(OnLogCallback callback) {
+        mOnLogCallback = callback;
+    }
+
+    /**
+     * 获取日志回调接口
+     * @return
+     */
+    public static OnLogCallback getOnLogCallback() {
+        return mOnLogCallback;
+    }
+
+    /**
+     * 获取mybreakpad版本信息
+     * @return
+     */
+    public static String getMyBreakpadVersion() {
+        return BreakpadConfig.BREAKPAD_LIB_VERSION;
     }
 
     public static NativeMybreakpad getInstance() {
@@ -257,6 +297,10 @@ public class NativeMybreakpad {
      */
     public int init(Context context, String dumpFileDir) {
         if(context == null) {
+            DebugLog.e(TAG, "context is null");
+            if(mOnEventListener != null) {
+                mOnEventListener.onInitEvent(EVENT_INIT_CONTEXT_NULL, 0);
+            }
             return TYPE_INIT_CONTEXT_NULL;
         }
 
@@ -265,6 +309,9 @@ public class NativeMybreakpad {
 
         if (TextUtils.isEmpty(dumpFileDir)) {
             DebugLog.e(TAG, "dumpFileDir can not be empty");
+            if(mOnEventListener != null) {
+                mOnEventListener.onInitEvent(EVENT_INIT_DUMPDIR_NULL, 0);
+            }
             return TYPE_INIT_DUMPDIR_NULL;
         }
         if (mIsLibLoaded) {
@@ -272,6 +319,9 @@ public class NativeMybreakpad {
                 return TYPE_INIT_SUCCESS;
             else
                 return TYPE_INIT_FAILED;
+        }
+        if(mOnEventListener != null) {
+            mOnEventListener.onInitEvent(EVENT_INIT_LOADSO_FAIL, 0);
         }
         return TYPE_INIT_LOADSO_FAIL;
     }

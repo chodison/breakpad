@@ -39,11 +39,13 @@ void *mWeak_thiz;
 #define EVENT_INIT_FAILED			1001
 #define EVENT_INIT_DUMPDIR_NULL		1002
 
-#define EVENT_PROCESS_SUCCESS			2000
-#define EVENT_PROCESS_FAILED			2001
-#define EVENT_PROCESS_DUMPFILE_NULL		2002
-#define EVENT_PROCESS_DUMPFILE_NULL		2002
-#define EVENT_PROCESS_DUMPFILE_NULL		2002
+#define EVENT_PROCESS_SUCCESS					2000
+#define EVENT_PROCESS_FAILED					2001
+#define EVENT_PROCESS_OBJFAIL_CLASS				2002
+#define EVENT_PROCESS_OBJFAIL_METHOD_INIT		200301
+#define EVENT_PROCESS_OBJFAIL_METHOD_NEWOBJ     200302
+#define EVENT_PROCESS_OBJFAIL_METHOD_GETFEILD   200303
+#define EVENT_PROCESS_DUMPFILE_NULL				2004
 
 static volatile int needCheckStatus = STATUS_IDLE;
 static volatile bool needGetAddr = false;
@@ -165,8 +167,8 @@ void onNativeEventReport(int what, int arg1, int arg2, jobject obj) {
 	jmethodID crashReportMethod = env->GetStaticMethodID(crashClass,
 			"onNativeCrashEvent", "(Ljava/lang/Object;IIILjava/lang/Object;)V");
 	if (env->ExceptionCheck()) {
-			env->ExceptionDescribe();
-			env->ExceptionClear();
+		env->ExceptionDescribe();
+		env->ExceptionClear();
 	}
 	if (crashReportMethod == NULL) {
 		LOGE("GetMethod onNativeCrash null");
@@ -181,9 +183,9 @@ void onNativeEventReport(int what, int arg1, int arg2, jobject obj) {
 	env->CallStaticVoidMethod(crashClass, crashReportMethod, mWeak_thiz, what, arg1, arg2, obj);
 
     if (env->ExceptionCheck()) {
-               env->ExceptionDescribe();
-               env->ExceptionClear();
-       }
+	   env->ExceptionDescribe();
+	   env->ExceptionClear();
+   }
 
 	if (isAttach) {
 		if(mJVM->DetachCurrentThread()) {
@@ -259,19 +261,19 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
     jclass crashInfo = env->FindClass("com/chodison/mybreakpad/NativeCrashInfo");
     if(crashInfo == NULL) {
         LOGE("Process ===>get NativeCrashInfo failed");
-        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
+        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_OBJFAIL_CLASS);
         return NULL;
     }
     jmethodID crashInfoID = env->GetMethodID(crashInfo, "<init>", "()V");
     if(crashInfoID == NULL) {
         LOGE("Process ===>get NativeCrashInfo MethodID failed");
-        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
+        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_OBJFAIL_METHOD_INIT);
         return NULL;
     }
     jobject crashInfoObj = env->NewObject(crashInfo, crashInfoID);
     if(crashInfoObj == NULL) {
         LOGE("Process ===>NewObject NativeCrashInfo failed");
-        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
+        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_OBJFAIL_METHOD_NEWOBJ);
         return NULL;
     }
     jfieldID crashSoName_fid = env->GetFieldID(crashInfo, "crashSoName", "[Ljava/lang/String;");
@@ -281,7 +283,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
     if(crashSoName_fid == NULL || crashSoAddr_fid == NULL
     || firstSoName_fid == NULL || existAppSo_fid == NULL) {
         LOGE("Process ===> NativeCrashInfo GetFieldID failed");
-        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
+        onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_OBJFAIL_METHOD_GETFEILD);
         return NULL;
     }
 

@@ -19,6 +19,9 @@ package com.chodison.mybreakpad.progma;
 import java.util.Locale;
 import android.util.Log;
 
+import com.chodison.mybreakpad.NativeMyBreakpadListener;
+import com.chodison.mybreakpad.NativeMybreakpad;
+
 
 public class DebugLog {
 	private static final int REPORT_LOG_LEVEL_DEBUG = 0;
@@ -27,7 +30,10 @@ public class DebugLog {
 	private static final int REPORT_LOG_LEVEL_ERROR = 3;
 	
 	private static void reportLog(int level, String tag, String msg) {
-
+        NativeMyBreakpadListener.OnLogCallback onLogCallback = NativeMybreakpad.getOnLogCallback();
+        if(onLogCallback != null) {
+            onLogCallback.onLogCb(level, "21", tag, msg);
+        }
 	}
 	
     // debug function.

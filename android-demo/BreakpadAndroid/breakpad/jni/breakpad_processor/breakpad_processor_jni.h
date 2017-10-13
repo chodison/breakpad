@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 chodison <c_soft_dev@163.com>
+ *
+ * This file is part of libmybreakpad
+ *
+ */
 #ifndef __BREAKPAD_PROCESSOR_JNI_H__
 #define __BREAKPAD_PROCESSOR_JNI_H__
 

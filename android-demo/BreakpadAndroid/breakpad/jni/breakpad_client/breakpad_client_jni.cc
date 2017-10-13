@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 chodison <c_soft_dev@163.com>
+ *
+ * This file is part of libbreakpad_client
+ *
+ */
 #include "breakpad_client_jni.h"
 #include "src/client/linux/handler/exception_handler.h"
 #include "src/client/linux/handler/minidump_descriptor.h"

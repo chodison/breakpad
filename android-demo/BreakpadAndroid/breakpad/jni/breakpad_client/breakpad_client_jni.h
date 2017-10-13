@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2017 chodison <c_soft_dev@163.com>
+ *
+ * This file is part of libbreakpad_client
+ *
+ */
 #ifndef __BREAKPAD_CLIENT_JNI_H__
 #define __BREAKPAD_CLIENT_JNI_H__
 

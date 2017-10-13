@@ -1,3 +1,10 @@
+/*
+ * Copyright (c) 2017 chodison <c_soft_dev@163.com>
+ *
+ * This file is part of libmybreakpad
+ *
+ */
+
 #include <pthread.h>
 #include "mybreakpad_jni.h"
 

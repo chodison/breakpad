@@ -1,4 +1,4 @@
-// Copyright (c) 2014, Google Inc.
+// Copyright 2017, Google Inc.
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -27,38 +27,28 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-// The processor for microdump (a reduced dump containing only the state of the
-// crashing thread). See crbug.com/410294 for more info and design docs.
+#include "common/path_helper.h"
 
-#ifndef GOOGLE_BREAKPAD_PROCESSOR_MICRODUMP_PROCESSOR_H__
-#define GOOGLE_BREAKPAD_PROCESSOR_MICRODUMP_PROCESSOR_H__
-
-#include <string>
-
-#include "common/using_std_string.h"
-#include "google_breakpad/processor/process_result.h"
+#include <assert.h>
+#include <libgen.h>
+#include <string.h>
 
 namespace google_breakpad {
 
-class Microdump;
-class ProcessState;
-class StackFrameSymbolizer;
+string BaseName(const string& path) {
+  char* path_tmp = strdup(path.c_str());
+  assert(path_tmp);
+  string result(basename(path_tmp));
+  free(path_tmp);
+  return result;
+}
 
-class MicrodumpProcessor {
- public:
-  // Initializes the MicrodumpProcessor with a stack frame symbolizer.
-  // Does not take ownership of frame_symbolizer, which must NOT be NULL.
-  explicit MicrodumpProcessor(StackFrameSymbolizer* frame_symbolizer);
-
-  virtual ~MicrodumpProcessor();
-
-  // Processes the microdump contents and fills process_state with the result.
-  google_breakpad::ProcessResult Process(Microdump* microdump,
-                                         ProcessState* process_state);
- private:
-  StackFrameSymbolizer* frame_symbolizer_;
-};
+string DirName(const string& path) {
+  char* path_tmp = strdup(path.c_str());
+  assert(path_tmp);
+  string result(dirname(path_tmp));
+  free(path_tmp);
+  return result;
+}
 
 }  // namespace google_breakpad
-
-#endif  // GOOGLE_BREAKPAD_PROCESSOR_MICRODUMP_PROCESSOR_H__

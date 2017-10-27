@@ -88,6 +88,7 @@ LOCAL_SRC_FILES 	+=\
 	$(MY_APP_JNI_ROOT)/src/common/linux/file_id.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/linux_libc_support.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/memory_mapped_file.cc \
+	$(MY_APP_JNI_ROOT)/src/common/path_helper.cc \
 	$(MY_APP_JNI_ROOT)/src/common/linux/safe_readlink.cc 
 
 LOCAL_C_INCLUDES        := $(MY_APP_JNI_ROOT)/src/common/android/include \

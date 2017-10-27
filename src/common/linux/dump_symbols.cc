@@ -64,8 +64,9 @@
 #include "common/linux/elfutils-inl.h"
 #include "common/linux/elf_symbols_to_module.h"
 #include "common/linux/file_id.h"
-#include "common/memory.h"
+#include "common/memory_allocator.h"
 #include "common/module.h"
+#include "common/path_helper.h"
 #include "common/scoped_ptr.h"
 #ifndef NO_STABS_SUPPORT
 #include "common/stabs_reader.h"
@@ -884,16 +885,6 @@ const char* ElfArchitecture(const typename ElfClass::Ehdr* elf_header) {
   }
 }
 
-// Return the non-directory portion of FILENAME: the portion after the
-// last slash, or the whole filename if there are no slashes.
-string BaseFileName(const string &filename) {
-  // Lots of copies!  basename's behavior is less than ideal.
-  char* c_filename = strdup(filename.c_str());
-  string base = basename(c_filename);
-  free(c_filename);
-  return base;
-}
-
 template<typename ElfClass>
 bool SanitizeDebugFile(const typename ElfClass::Ehdr* debug_elf_header,
                        const string& debuglink_file,
@@ -944,7 +935,7 @@ bool InitModuleForElfClass(const typename ElfClass::Ehdr* elf_header,
     return false;
   }
 
-  string name = BaseFileName(obj_filename);
+  string name = google_breakpad::BaseName(obj_filename);
   string os = "Linux";
   // Add an extra "0" at the end.  PDB files on Windows have an 'age'
   // number appended to the end of the file identifier; this isn't

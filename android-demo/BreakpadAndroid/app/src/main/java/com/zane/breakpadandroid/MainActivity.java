@@ -105,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
                             String[] crashSoName = crashInfo.crashSoName;
                             String[] crashSoAddr = crashInfo.crashSoAddr;
                             int existAppSo = crashInfo.exist_app_so;
-                            Log.e(TAG, "exist app so crash: " + crashInfo.firstCrashSoName);
+                            Log.e(TAG, "exist app so crash: " + existAppSo);
                             Log.e(TAG, "first crash so name: " + crashInfo.firstCrashSoName);
                             if(existAppSo == 1) {
                                 for (int i = 0; i < crashSoName.length; i++) {

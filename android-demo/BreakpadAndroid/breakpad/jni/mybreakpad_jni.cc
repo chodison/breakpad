@@ -366,6 +366,8 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
         }
         onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_SUCCESS);
     } else {
+        env->SetIntField(crashInfoObj, existAppSo_fid, 0);
+        strcpy(mSoInfo.firstCrashSoName, "NAF");
     	onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
     }
     pthread_mutex_unlock(&mutex);

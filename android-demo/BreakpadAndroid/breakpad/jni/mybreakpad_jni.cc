@@ -330,6 +330,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
 
     //处理dump文件
     bool ret = processDumpFile(dump_file);
+    jstring firstSoName_jst;
     //处理成功
     if(ret) {
     	//第一个崩溃so未找到
@@ -362,13 +363,15 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
         }
 
         if(strlen(mSoInfo.firstCrashSoName) > 0) {
-            jstring firstSoName_jst = env->NewStringUTF(mSoInfo.firstCrashSoName);
+            firstSoName_jst = env->NewStringUTF(mSoInfo.firstCrashSoName);
             env->SetObjectField(crashInfoObj, firstSoName_fid, firstSoName_jst);
         }
         onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_SUCCESS);
     } else {
         env->SetIntField(crashInfoObj, existAppSo_fid, 0);
         strcpy(mSoInfo.firstCrashSoName, "NAF");
+        firstSoName_jst = env->NewStringUTF(mSoInfo.firstCrashSoName);
+        env->SetObjectField(crashInfoObj, firstSoName_fid, firstSoName_jst);
     	onNativeEventReport_arg1(EVENT_WHAT_PROCESS, EVENT_PROCESS_FAILED);
     }
     pthread_mutex_unlock(&mutex);

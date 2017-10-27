@@ -71,7 +71,8 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
         //只需找第一个Thread即可
         if(needCheckStatus == STATUS_BEGIN && (strstr(line, "Thread") || strstr(line, "Loaded modules")))
             needCheckStatus = STATUS_END;
-        if(needCheckStatus == STATUS_INIT && strstr(line, "Thread") && strstr(line, "crashed"))
+        //有的dump文件处理后Thread的后面没有crashed
+        if(needCheckStatus == STATUS_INIT && strstr(line, "Thread") /*&& strstr(line, "crashed")*/)
             needCheckStatus = STATUS_BEGIN;
 
         //检查每一行

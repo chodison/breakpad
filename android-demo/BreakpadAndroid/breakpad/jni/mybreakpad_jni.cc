@@ -25,6 +25,7 @@ struct ProcessorSoInfo{
     char crashSoIndex[MAX_SO_NUM];
     char crashSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
     char crashSoAddr[MAX_SO_NUM][MAX_SO_NAME_LEN];
+    int crashSoValid[MAX_SO_NUM];
     char firstCrashSoName[MAX_SO_NAME_LEN];
     int  so_num;
     int crash_so_num;
@@ -56,6 +57,8 @@ void *mWeak_thiz;
 
 static volatile int needCheckStatus = STATUS_IDLE;
 static volatile bool needGetAddr = false;
+static volatile bool needCheckValid = false;
+static volatile bool needNextFind = false;
 static ProcessorSoInfo mSoInfo;
 static pthread_mutex_t mutex;
 FILE *pFile = NULL;
@@ -84,6 +87,25 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
         	//有需要查找的so并且查找到崩溃的so堆栈信息数小于最大的so的个数
         	if(mSoInfo.so_num > 0 && mSoInfo.crash_so_num < MAX_SO_NUM) {
 				int i = 0;
+
+				//找到有效崩溃信息 "Found by: given as instruction pointer in context"
+                if(needCheckValid && !needGetAddr && strstr(line, "Found by")) {
+                    LOGI("valid text: %s", line);
+                    if(strstr(line, "given as instruction pointer in context")) {
+                        LOGI("find valid text: %s", line);
+                        mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 1;
+                        needNextFind = true;
+                    } else {
+                        //确保是连续的
+                        if(needNextFind) {
+                            mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 1;
+                        } else {
+                            mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 0;
+                        }
+                    }
+                    needCheckValid = false;
+                }
+
 				//当出现崩溃的so后紧接着下一行将是堆栈地址，没有就跳过
 				if(needGetAddr) {
 					needGetAddr = false;
@@ -96,15 +118,23 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 					}
 				}
 
-				for(i = 0; i< mSoInfo.so_num; i++) {
-					if(strstr(line, mSoInfo.checkSoName[i])) {
-						LOGI("find crash [%d]: %s", i, mSoInfo.checkSoName[i]);
-						mSoInfo.crashSoIndex[i] = 1;
-						strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num], mSoInfo.checkSoName[i]);
-						mSoInfo.crash_so_num ++;
-						needGetAddr = true;
-						break;//每一行只会出现一个so
-					}
+                if(strstr(line, ".so")) {
+                    for(i = 0; i< mSoInfo.so_num; i++) {
+                        if(strstr(line, mSoInfo.checkSoName[i])) {
+                            LOGI("find crash [%d]: %s", i, mSoInfo.checkSoName[i]);
+                            mSoInfo.crashSoIndex[i] = 1;
+                            strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num], mSoInfo.checkSoName[i]);
+                            mSoInfo.crash_so_num ++;
+                            needGetAddr = true;
+                            needCheckValid = true;
+                            break;//每一行只会出现一个so
+                        }
+                        //已经不连续了，不需要再处理后续的so
+                        if(needNextFind && i == mSoInfo.so_num - 1) {
+                            needNextFind = false;
+                            needCheckStatus = STATUS_END;
+                        }
+                    }
 				}
         	}
         }
@@ -125,6 +155,8 @@ bool processDumpFile(const char* dump_path) {
     bool ret = false;
     needCheckStatus = STATUS_INIT;
     needGetAddr = false;
+    needCheckValid = false;
+    needNextFind = false;
     ret = MinidumpProcessExport(dump_path, symbol_paths, false, true);
     if(pFile)
     {
@@ -345,7 +377,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
         }
         //构造crashInfoObj并赋值
         jclass stringClass = env->FindClass("java/lang/String");
-        if(mSoInfo.crash_so_num > 0) {
+        if(mSoInfo.crash_so_num > 0 && mSoInfo.crashSoValid[0]) {
             jobjectArray soname = env->NewObjectArray(mSoInfo.crash_so_num, stringClass, 0);
             jobjectArray soaddr = env->NewObjectArray(mSoInfo.crash_so_num, stringClass, 0);
             for (i = 0; i < mSoInfo.crash_so_num; i++) {

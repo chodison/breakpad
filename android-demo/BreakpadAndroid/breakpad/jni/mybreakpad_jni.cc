@@ -78,6 +78,21 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
         if(needCheckStatus == STATUS_INIT && strstr(line, "Thread") /*&& strstr(line, "crashed")*/)
             needCheckStatus = STATUS_BEGIN;
 
+        //当查找到dalvik-main space (deleted)可以终止了
+        if(needCheckStatus == STATUS_BEGIN && needNextFind &&
+                strstr(line, "dalvik-main space") != NULL) {
+            needCheckStatus = STATUS_END;
+        }
+
+        //Found by：given as instruction pointer in context块里面不包含so
+        //FIXME:需要重新确定筛选规则
+        if(needCheckStatus == STATUS_BEGIN && strlen(mSoInfo.firstCrashSoName) < 1 &&
+           strstr(line, "given as instruction pointer in context")) {
+            LOGE("do not  find so name");
+            strcpy(mSoInfo.firstCrashSoName, "FNOSONAME");
+            needCheckStatus == STATUS_END;
+        }
+
         //检查每一行
         if(needCheckStatus == STATUS_BEGIN) {
         	if(strlen(mSoInfo.firstCrashSoName) < 1 && strstr(line, ".so")) {
@@ -122,13 +137,23 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
                     for(i = 0; i< mSoInfo.so_num; i++) {
                         if(strstr(line, mSoInfo.checkSoName[i])) {
                             LOGI("find crash [%d]: %s", i, mSoInfo.checkSoName[i]);
-                            mSoInfo.crashSoIndex[i] = 1;
-                            strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num], mSoInfo.checkSoName[i]);
-                            mSoInfo.crash_so_num ++;
-                            needGetAddr = true;
-                            needCheckValid = true;
-                            break;//每一行只会出现一个so
+                            //排除后面找到的基础库libc.so
+                            if (needNextFind && strstr(mSoInfo.checkSoName[i], "libc.so") &&
+                                strstr(mSoInfo.crashSoName[mSoInfo.crash_so_num-1], "libc.so") == NULL) {
+                                needNextFind = false;
+                                needCheckStatus = STATUS_END;
+                                break;
+                            } else {
+                                mSoInfo.crashSoIndex[i] = 1;
+                                strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
+                                       mSoInfo.checkSoName[i]);
+                                mSoInfo.crash_so_num++;
+                                needGetAddr = true;
+                                needCheckValid = true;
+                                break;//每一行只会出现一个so
+                            }
                         }
+
                         //已经不连续了，不需要再处理后续的so
                         if(needNextFind && i == mSoInfo.so_num - 1) {
                             needNextFind = false;
@@ -181,13 +206,13 @@ void onNativeEventReport(int what, int arg1, int arg2, jobject obj) {
     if (result != JNI_OK) {
         LOGE("mJVM->GetEnv failed");
         if(mJVM->AttachCurrentThread(&env, NULL)) {
+            isAttach = false;
 			LOGE("%s:%d: AttachCurrentThread fail!", __FUNCTION__, __LINE__);
 			return;
 		} else {
 			LOGI("Attached success.");
 			isAttach = true;
 		}
-        return;
     }
 
     LOGI("onNativeCrash ===> succeeded %d-%d-%d", what, arg1, arg2);

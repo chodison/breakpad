@@ -38,6 +38,7 @@ void *mWeak_thiz;
 #define STATUS_IDLE  0
 #define STATUS_INIT  1
 #define STATUS_BEGIN  2
+#define STATUS_BEGIN2  22
 #define STATUS_END  3
 
 #define EVENT_WHAT_INIT			100
@@ -86,12 +87,14 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 
         //Found by：given as instruction pointer in context块里面不包含so
         //FIXME:需要重新确定筛选规则
+#if 0 //暂时关闭
         if(needCheckStatus == STATUS_BEGIN && strlen(mSoInfo.firstCrashSoName) < 1 &&
            strstr(line, "given as instruction pointer in context")) {
             LOGE("do not  find so name");
             strcpy(mSoInfo.firstCrashSoName, "FNOSONAME");
             needCheckStatus == STATUS_END;
         }
+#endif
 
         //检查每一行
         if(needCheckStatus == STATUS_BEGIN) {
@@ -154,14 +157,36 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
                             }
                         }
 
-                        //已经不连续了，不需要再处理后续的so
+                        //不连续了，不需要再处已经理后续的so
                         if(needNextFind && i == mSoInfo.so_num - 1) {
-                            needNextFind = false;
-                            needCheckStatus = STATUS_END;
+                            if(mSoInfo.crash_so_num >= 1 && strstr(mSoInfo.crashSoName[mSoInfo.crash_so_num-1], "libc.so")) {
+                                strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
+                                       strstr(line, "lib"));
+                                mSoInfo.crash_so_num++;
+                                needGetAddr = true;
+                                needCheckValid = true;
+                                needCheckStatus = STATUS_BEGIN2;
+                            } else {
+                                needNextFind = false;
+                                needCheckStatus = STATUS_END;
+                            }
                         }
                     }
 				}
         	}
+        } else if(needNextFind && needCheckStatus == STATUS_BEGIN2) {
+            if(needGetAddr) {
+                needGetAddr = false;
+                if(strstr(line, "0x")) {
+                    LOGI("find crash addr: %s", line);
+                    strcpy(mSoInfo.crashSoAddr[mSoInfo.crash_so_num - 1], strstr(line, "0x"));
+                } else {
+                    LOGE("can not find crash addr: %s", line);
+                    strcpy(mSoInfo.crashSoAddr[mSoInfo.crash_so_num - 1], "NA");
+                }
+                needNextFind = false;
+                needCheckStatus = STATUS_END;
+            }
         }
 
         if(pFile == NULL)

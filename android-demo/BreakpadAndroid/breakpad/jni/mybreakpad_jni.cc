@@ -25,7 +25,7 @@ struct ProcessorSoInfo{
     char crashSoIndex[MAX_SO_NUM];
     char crashSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
     char crashSoAddr[MAX_SO_NUM][MAX_SO_NAME_LEN];
-    int crashSoValid[MAX_SO_NUM];
+    int crashSoValid;
     char firstCrashSoName[MAX_SO_NAME_LEN];
     int  so_num;
     int crash_so_num;
@@ -64,6 +64,20 @@ static ProcessorSoInfo mSoInfo;
 static pthread_mutex_t mutex;
 FILE *pFile = NULL;
 
+static bool isBaseLibrary(char* libstr)
+{
+    bool isBaseLib = false;
+    if(!libstr) {
+        goto fail;
+    }
+    if(strstr(libstr, "libc.so") ||
+       strstr(libstr, "libc++.so")) {
+        isBaseLib = true;
+    }
+    fail:
+    return isBaseLib;
+}
+
 static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list vl)
 {
     char line[MAX_LOGTEXT_LEN] = {0};
@@ -81,20 +95,22 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 
         //当查找到dalvik-main space (deleted)可以终止了
         if(needCheckStatus == STATUS_BEGIN && needNextFind &&
-                strstr(line, "dalvik-main space") != NULL) {
+                strstr(line, "dalvik-main space") != NULL &&
+                /*找到最后一个SO不是基础库为止*/
+                (mSoInfo.crash_so_num >= 1 && !isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1]))) {
             needCheckStatus = STATUS_END;
         }
 
         //Found by：given as instruction pointer in context块里面不包含so
         //FIXME:需要重新确定筛选规则
-#if 0 //暂时关闭
         if(needCheckStatus == STATUS_BEGIN && strlen(mSoInfo.firstCrashSoName) < 1 &&
            strstr(line, "given as instruction pointer in context")) {
-            LOGE("do not  find so name");
+            LOGE("do not find so name for first Block");
+#if 0 //暂时关闭
             strcpy(mSoInfo.firstCrashSoName, "FNOSONAME");
             needCheckStatus == STATUS_END;
-        }
 #endif
+        }
 
         //检查每一行
         if(needCheckStatus == STATUS_BEGIN) {
@@ -111,15 +127,11 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
                     LOGI("valid text: %s", line);
                     if(strstr(line, "given as instruction pointer in context")) {
                         LOGI("find valid text: %s", line);
-                        mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 1;
+                        mSoInfo.crashSoValid = 1;
                         needNextFind = true;
                     } else {
                         //确保是连续的
-                        if(needNextFind) {
-                            mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 1;
-                        } else {
-                            mSoInfo.crashSoValid[mSoInfo.crash_so_num - 1] = 0;
-                        }
+                        mSoInfo.crashSoValid = 0;
                     }
                     needCheckValid = false;
                 }
@@ -141,31 +153,40 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
                         if(strstr(line, mSoInfo.checkSoName[i])) {
                             LOGI("find crash [%d]: %s", i, mSoInfo.checkSoName[i]);
                             //排除后面找到的基础库libc.so
-                            if (needNextFind && strstr(mSoInfo.checkSoName[i], "libc.so") &&
-                                strstr(mSoInfo.crashSoName[mSoInfo.crash_so_num-1], "libc.so") == NULL) {
+                            if (needNextFind && isBaseLibrary(mSoInfo.checkSoName[i]) &&
+                                !isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1])) {
                                 needNextFind = false;
                                 needCheckStatus = STATUS_END;
                                 break;
                             } else {
-                                mSoInfo.crashSoIndex[i] = 1;
-                                strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
-                                       mSoInfo.checkSoName[i]);
-                                mSoInfo.crash_so_num++;
-                                needGetAddr = true;
-                                needCheckValid = true;
+                                if(mSoInfo.crash_so_num > 0)
+                                    LOGI("current last crash soname: %s", mSoInfo.crashSoName[mSoInfo.crash_so_num - 1]);
+                                if(mSoInfo.crash_so_num > 0 && isBaseLibrary(mSoInfo.checkSoName[i]) &&
+                                   !isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1])) {
+                                    needCheckStatus = STATUS_END;
+                                } else {
+                                    mSoInfo.crashSoIndex[i] = 1;
+                                    strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
+                                           mSoInfo.checkSoName[i]);
+                                    mSoInfo.crash_so_num++;
+                                    needGetAddr = true;
+                                    needCheckValid = true;
+                                }
+
                                 break;//每一行只会出现一个so
                             }
                         }
 
                         //不连续了，不需要再处已经理后续的so
                         if(needNextFind && i == mSoInfo.so_num - 1) {
-                            if(mSoInfo.crash_so_num >= 1 && strstr(mSoInfo.crashSoName[mSoInfo.crash_so_num-1], "libc.so")) {
+                            if(mSoInfo.crash_so_num >= 1 && isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1])) {
                                 strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
                                        strstr(line, "lib"));
                                 mSoInfo.crash_so_num++;
                                 needGetAddr = true;
                                 needCheckValid = true;
                                 needCheckStatus = STATUS_BEGIN2;
+                                LOGI("change status to STATUS_BEGIN2");
                             } else {
                                 needNextFind = false;
                                 needCheckStatus = STATUS_END;
@@ -427,7 +448,8 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
         }
         //构造crashInfoObj并赋值
         jclass stringClass = env->FindClass("java/lang/String");
-        if(mSoInfo.crash_so_num > 0 && mSoInfo.crashSoValid[0]) {
+        //FIXME:given as instruction pointer in context 板块没有so信息，但是有基础库信息得保留这种情况
+        if(mSoInfo.crash_so_num > 0 && (mSoInfo.crashSoValid || !isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1]))) {
             jobjectArray soname = env->NewObjectArray(mSoInfo.crash_so_num, stringClass, 0);
             jobjectArray soaddr = env->NewObjectArray(mSoInfo.crash_so_num, stringClass, 0);
             for (i = 0; i < mSoInfo.crash_so_num; i++) {

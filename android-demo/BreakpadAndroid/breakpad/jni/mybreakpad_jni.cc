@@ -19,16 +19,27 @@
 #define MAX_SO_NAME_LEN 512
 #define MAX_SO_NUM 100
 
+
 struct ProcessorSoInfo{
     char szFileName[MAX_LOG_FILE_NAME_LEN];
     char checkSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
     char crashSoIndex[MAX_SO_NUM];
     char crashSoName[MAX_SO_NUM][MAX_SO_NAME_LEN];
     char crashSoAddr[MAX_SO_NUM][MAX_SO_NAME_LEN];
-    int crashSoValid;
+    int  crashSoValid;
     char firstCrashSoName[MAX_SO_NAME_LEN];
     int  so_num;
-    int crash_so_num;
+    int  crash_so_num;
+    /**
+    常量	    解释
+    SIGTERM	发送给程序的终止请求
+    SIGSEGV	非法内存访问（段错误）
+    SIGINT	外部中断，通常为用户所发动
+    SIGILL	非法程序映像，例如非法指令
+    SIGABRT	异常终止条件，例如 abort() 所起始的
+    SIGFPE	错误的算术运算，如除以零
+     */
+    char signal_type[10];
 };
 
 static google_breakpad::ExceptionHandler* mExceptionHandler;
@@ -85,6 +96,10 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 
     if(vsnprintf(line, sizeof(line) - 1, fmt, vl) >= 0)
     {
+        if(strstr(line, "Crash reason") && strstr(line, "SIG")) {
+            LOGI("find Crash reason,line: %s", line);
+            strcpy(mSoInfo.signal_type, strstr(line, "SIG"));
+        }
         //if(strstr(line, "Loaded modules"))
         //只需找第一个Thread即可
         if(needCheckStatus == STATUS_BEGIN && (strstr(line, "Thread") || strstr(line, "Loaded modules")))
@@ -391,6 +406,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
     jfieldID crashSoAddr_fid = env->GetFieldID(crashInfo, "crashSoAddr", "[Ljava/lang/String;");
     jfieldID firstSoName_fid = env->GetFieldID(crashInfo, "firstCrashSoName", "Ljava/lang/String;");
     jfieldID existAppSo_fid = env->GetFieldID(crashInfo, "exist_app_so", "I");
+    jfieldID siganltype_fid = env->GetFieldID(crashInfo, "signal_type", "Ljava/lang/String;");
     if(crashSoName_fid == NULL || crashSoAddr_fid == NULL
     || firstSoName_fid == NULL || existAppSo_fid == NULL) {
         LOGE("Process ===> NativeCrashInfo GetFieldID failed");
@@ -400,6 +416,7 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
 
     //初始化SO信息
     memset(&mSoInfo, 0, sizeof(ProcessorSoInfo));
+    strcpy(mSoInfo.signal_type, "UNKNOWN");
 
     //需要处理的dump文件
     if(dump_file_jst == NULL) {
@@ -434,8 +451,13 @@ JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDu
     //处理dump文件
     bool ret = processDumpFile(dump_file);
     jstring firstSoName_jst;
+    jstring sinaltype_jst;
     //处理成功
     if(ret) {
+        //信号量类型
+        sinaltype_jst = env->NewStringUTF(mSoInfo.signal_type);
+        env->SetObjectField(crashInfoObj, siganltype_fid, sinaltype_jst);
+        LOGE("Process ===>signal_type: %s", mSoInfo.signal_type);
     	//第一个崩溃so未找到
     	if(strlen(mSoInfo.firstCrashSoName) < 1) {
     		strcpy(mSoInfo.firstCrashSoName, "NA");

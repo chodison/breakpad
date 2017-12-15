@@ -28,4 +28,14 @@ public class NativeCrashInfo {
     public int exist_app_so;
     //记录第一个崩溃的SO名字，当exist_app_so为0的话说明其他so崩溃了
     public String firstCrashSoName;
+    /**
+     常量	    解释
+     SIGTERM	发送给程序的终止请求
+     SIGSEGV	非法内存访问（段错误）
+     SIGINT	外部中断，通常为用户所发动
+     SIGILL	非法程序映像，例如非法指令
+     SIGABRT	异常终止条件，例如 abort() 所起始的
+     SIGFPE	错误的算术运算，如除以零
+     */
+    public String signal_type;
 }

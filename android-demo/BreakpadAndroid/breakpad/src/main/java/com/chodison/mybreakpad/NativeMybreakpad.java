@@ -305,6 +305,13 @@ public class NativeMybreakpad {
         }
 
         loadLibrariesOnce(context);
+        //初始化SO失败
+        if(!mIsLibLoaded) {
+            if(mOnEventListener != null) {
+                mOnEventListener.onInitEvent(EVENT_INIT_LOADSO_FAIL, 0);
+            }
+            return TYPE_INIT_LOADSO_FAIL;
+        }
         initNativeOnce();
 
         if (TextUtils.isEmpty(dumpFileDir)) {

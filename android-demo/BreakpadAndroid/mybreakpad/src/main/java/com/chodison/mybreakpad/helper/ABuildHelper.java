@@ -262,7 +262,9 @@ public class ABuildHelper {
         boolean isSupportX86 = supportABI(ABI_X86);
         if(!isSupportX86 && isApi16_JellyBeanOrLater()) {
             isSupportX86 = isIntelMediaCodec();
-            DebugLog.i("ABuildHelper", "isIntelMediaCodec");
+            if(isSupportX86) {
+                DebugLog.i("ABuildHelper", "isIntelMediaCodec");
+            }
         }
         return isSupportX86;
     }

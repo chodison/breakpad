@@ -16,13 +16,21 @@
 package com.chodison.mybreakpad.helper;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
 
 import android.media.CamcorderProfile;
 import android.os.Build;
 import android.text.TextUtils;
+
+import org.xmlpull.v1.XmlPullParser;
+import org.xmlpull.v1.XmlPullParserFactory;
+
+import com.chodison.mybreakpad.progma.DebugLog;
 
 public class ABuildHelper {
 
@@ -203,8 +211,60 @@ public class ABuildHelper {
         return supportABI(ABI_ARMv7a);
     }
 
+    public static boolean isIntelMediaCodec() {
+        return  findMediaCodec("OMX.Intel.");
+    }
+    public static boolean findMediaCodec(String codecname){
+        boolean isHardcode = false;
+        //读取系统配置文件/system/etc/media_codecc.xml
+        File file = new File("/system/etc/media_codecs.xml");
+        InputStream inFile = null;
+        try {
+            inFile = new FileInputStream(file);
+        } catch (Exception e) {
+            DebugLog.i("ABuildHelper", "findMediaCodec : " + codecname +"FileInputStream failed");
+        }
+
+        if(inFile != null) {
+            XmlPullParserFactory pullFactory;
+            try {
+                pullFactory = XmlPullParserFactory.newInstance();
+                XmlPullParser xmlPullParser = pullFactory.newPullParser();
+                xmlPullParser.setInput(inFile, "UTF-8");
+                int eventType = xmlPullParser.getEventType();
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    String tagName = xmlPullParser.getName();
+                    switch (eventType) {
+                        case XmlPullParser.START_TAG:
+                            if ("MediaCodec".equals(tagName)) {
+                                String componentName = xmlPullParser.getAttributeValue(0);
+
+                                if(componentName.startsWith("OMX."))
+                                {
+                                    if(componentName.startsWith(codecname))
+                                    {
+                                        DebugLog.i("ABuildHelper", "findMediaCodec : " + componentName );
+                                        isHardcode = true;
+                                    }
+                                }
+                            }
+                    }
+                    eventType = xmlPullParser.next();
+                }
+            } catch (Exception e) {
+                DebugLog.i("ABuildHelper", "findMediaCodec : " + codecname +"parser failed");
+            }
+        }
+        return isHardcode;
+    }
+
     public static boolean supportX86() {
-        return supportABI(ABI_X86);
+        boolean isSupportX86 = supportABI(ABI_X86);
+        if(!isSupportX86 && isApi16_JellyBeanOrLater()) {
+            isSupportX86 = isIntelMediaCodec();
+            DebugLog.i("ABuildHelper", "isIntelMediaCodec");
+        }
+        return isSupportX86;
     }
 
     public static boolean supportARM() {

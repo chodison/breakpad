@@ -254,6 +254,12 @@ public class ABuildHelper {
             } catch (Exception e) {
                 DebugLog.i("ABuildHelper", "findMediaCodec : " + codecname +"parser failed");
             }
+            //文件关闭
+            try {
+                inFile.close();
+            } catch (Exception e) {
+                DebugLog.i("ABuildHelper", "file close failed");
+            }
         }
         return isHardcode;
     }

@@ -82,7 +82,8 @@ static bool isBaseLibrary(char* libstr)
         goto fail;
     }
     if(strstr(libstr, "libc.so") ||
-       strstr(libstr, "libc++.so")) {
+       strstr(libstr, "libc++.so") ||
+       strstr(libstr, "libart.so")) {
         isBaseLib = true;
     }
     fail:

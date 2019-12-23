@@ -44,6 +44,7 @@ MinidumpDescriptor::MinidumpDescriptor(const MinidumpDescriptor& descriptor)
     : mode_(descriptor.mode_),
       fd_(descriptor.fd_),
       directory_(descriptor.directory_),
+      appVersion_(descriptor.appVersion_),
       c_path_(NULL),
       size_limit_(descriptor.size_limit_),
       address_within_principal_mapping_(
@@ -65,6 +66,7 @@ MinidumpDescriptor& MinidumpDescriptor::operator=(
   mode_ = descriptor.mode_;
   fd_ = descriptor.fd_;
   directory_ = descriptor.directory_;
+  appVersion_ = descriptor.appVersion_;
   path_.clear();
   if (c_path_) {
     // This descriptor already had a path set, so generate a new one.
@@ -105,7 +107,7 @@ void MinidumpDescriptor::UpdatePath() {
     char str[25];
     snprintf(str,25,"-r%d",rand());
   path_.clear();
-  path_ = directory_ + "/" + time_string + str + ".dmp";
+  path_ = directory_ + "/" + appVersion_+ "-" + time_string + str + ".dmp";
   c_path_ = path_.c_str();
 }
 

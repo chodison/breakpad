@@ -69,6 +69,19 @@ class MinidumpDescriptor {
     assert(!directory.empty());
   }
 
+  explicit MinidumpDescriptor(const string& directory, const string& appVersion)
+          : mode_(kWriteMinidumpToFile),
+            fd_(-1),
+            directory_(directory),
+            appVersion_(appVersion),
+            c_path_(NULL),
+            size_limit_(-1),
+            address_within_principal_mapping_(0),
+            skip_dump_if_principal_mapping_not_referenced_(false),
+            sanitize_stacks_(false) {
+    assert(!directory.empty());
+  }
+
   explicit MinidumpDescriptor(int fd)
       : mode_(kWriteMinidumpToFd),
         fd_(fd),
@@ -98,6 +111,8 @@ class MinidumpDescriptor {
   int fd() const { return fd_; }
 
   string directory() const { return directory_; }
+
+  string appVersion() const { return appVersion_; }
 
   const char* path() const { return c_path_; }
 
@@ -155,6 +170,7 @@ class MinidumpDescriptor {
 
   // The directory where the minidump should be generated.
   string directory_;
+  string appVersion_;
 
   // The full path to the generated minidump.
   string path_;

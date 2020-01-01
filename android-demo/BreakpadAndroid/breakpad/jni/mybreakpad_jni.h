@@ -15,7 +15,7 @@ extern "C" {
 
 JNIEXPORT void JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeSetup(JNIEnv *env, jobject obj, jobject weak_this);
 
-JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir);
+JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir, jstring app_version);
 
 JNIEXPORT jobject JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeDumpProcess(JNIEnv *env, jobject obj,
 		jstring dump_file_jst, jstring processed_path_jst, jobjectArray check_sos);

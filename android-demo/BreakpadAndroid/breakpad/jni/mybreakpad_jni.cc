@@ -82,7 +82,8 @@ static bool isBaseLibrary(char* libstr)
         goto fail;
     }
     if(strstr(libstr, "libc.so") ||
-       strstr(libstr, "libc++.so")) {
+       strstr(libstr, "libc++.so") ||
+       strstr(libstr, "libart.so")) {
         isBaseLib = true;
     }
     fail:
@@ -355,18 +356,20 @@ JNIEXPORT void JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeSetup
 	mWeak_thiz = env->NewGlobalRef(weak_this);
 }
 
-JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir)
+JNIEXPORT jint JNICALL Java_com_chodison_mybreakpad_NativeMybreakpad_nativeInit(JNIEnv *env, jobject obj, jstring dumpfile_dir, jstring app_version)
 {
-	if(dumpfile_dir == NULL) {
-		onNativeEventReport_arg1(EVENT_WHAT_INIT, EVENT_INIT_DUMPDIR_NULL);
-	}
+    if(dumpfile_dir == NULL || app_version == NULL) {
+        onNativeEventReport_arg1(EVENT_WHAT_INIT, EVENT_INIT_DUMPDIR_NULL);
+    }
 
     const char *path = env->GetStringUTFChars(dumpfile_dir, NULL);
+    const char *version = env->GetStringUTFChars(app_version, NULL);
 
-    google_breakpad::MinidumpDescriptor descriptor(path);
+    google_breakpad::MinidumpDescriptor descriptor(path, version);
 //    static google_breakpad::ExceptionHandler eh(descriptor, NULL, DumpCallback, NULL, true, -1);
     mExceptionHandler = new google_breakpad::ExceptionHandler(descriptor, NULL, DumpCallback, NULL, true, -1);
     env->ReleaseStringUTFChars(dumpfile_dir, path);
+    env->ReleaseStringUTFChars(app_version, version);
 
     //设置trace打印回调
     breakpad_log_set_callback(breakpad_log_callback);

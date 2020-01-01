@@ -296,6 +296,10 @@ public class NativeMybreakpad {
      * @return
      */
     public int init(Context context, String dumpFileDir) {
+        return init(context, dumpFileDir, "1.0");
+    }
+
+    public int init(Context context, String dumpFileDir, String appVersion) {
         if(context == null) {
             DebugLog.e(TAG, "context is null");
             if(mOnEventListener != null) {
@@ -322,7 +326,13 @@ public class NativeMybreakpad {
             return TYPE_INIT_DUMPDIR_NULL;
         }
         if (mIsLibLoaded) {
-            if(nativeInit(dumpFileDir) > 0)
+            String version = "1.1";
+            if (TextUtils.isEmpty(appVersion)) {
+                DebugLog.e(TAG, "appVersion can not be empty");
+            } else {
+                version = appVersion;
+            }
+            if(nativeInit(dumpFileDir, version) > 0)
                 return TYPE_INIT_SUCCESS;
             else
                 return TYPE_INIT_FAILED;
@@ -333,7 +343,7 @@ public class NativeMybreakpad {
         return TYPE_INIT_LOADSO_FAIL;
     }
 
-    private static native int nativeInit(String dumpFileDir);
+    private static native int nativeInit(String dumpFileDir, String appVersion);
     /**
      * 分析dump文件
      * @param dump_file dump文件路径

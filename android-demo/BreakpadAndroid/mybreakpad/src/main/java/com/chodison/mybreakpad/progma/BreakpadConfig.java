@@ -17,7 +17,7 @@ package com.chodison.mybreakpad.progma;
 
 
 public class BreakpadConfig {
-	public static final String BREAKPAD_LIB_VERSION = "V1.0.13";
+	public static final String BREAKPAD_LIB_VERSION = "V1.0.14";
 	/**
 	 * Print no output.
 	 */

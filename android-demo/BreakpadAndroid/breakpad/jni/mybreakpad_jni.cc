@@ -195,7 +195,7 @@ static void breakpad_log_callback(void *ptr, int level, const char *fmt, va_list
 
                         //不连续了，不需要再处已经理后续的so
                         if(needNextFind && i == mSoInfo.so_num - 1) {
-                            if(mSoInfo.crash_so_num >= 1 && isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1])) {
+                            if(mSoInfo.crash_so_num >= 1 && isBaseLibrary(mSoInfo.crashSoName[mSoInfo.crash_so_num-1]) && strstr(line, "lib")) {
                                 strcpy(mSoInfo.crashSoName[mSoInfo.crash_so_num],
                                        strstr(line, "lib"));
                                 mSoInfo.crash_so_num++;

@@ -83,12 +83,32 @@ LogStream::LogStream(std::ostream &stream, Severity severity,
   time_t clock;
   time(&clock);
   struct tm tm_struct;
+  int getTimeOK = 0;
 #ifdef _WIN32
   localtime_s(&tm_struct, &clock);
 #else
-  localtime_r(&clock, &tm_struct);
+    #ifdef __ANDROID__
+        struct timeval  tv;
+        struct tm *tm, tmbuf;
+        if(0 == gettimeofday(&tv, NULL)) {
+            tm = localtime_r((time_t*)(&(tv.tv_sec)), &tmbuf);
+            if(NULL != tm) {
+                if(strftime(time_string, sizeof(time_string), "%Y-%m-%d %H:%M:%S", tm)) {
+                    getTimeOK = 1;
+                }
+            }
+        }
+        if(!getTimeOK)
+        {
+            snprintf(time_string, sizeof(time_string), "%s", "1970-01-01 00:00:00");
+        }
+    #else
+        localtime_r(&clock, &tm_struct);
+    #endif
 #endif
+#ifndef __ANDROID__
   strftime(time_string, sizeof(time_string), "%Y-%m-%d %H:%M:%S", &tm_struct);
+#endif
 
   const char *severity_string = "UNKNOWN_SEVERITY";
   switch (severity) {
